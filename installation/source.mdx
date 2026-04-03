@@ -1,0 +1,263 @@
+---
+title: "Install from Source"
+description: "Build and run WeKan from source code"
+---
+
+Building WeKan from source is intended for developers who want to contribute to WeKan, add plugins, or run a custom build. For production deployments, [Docker](/installation/docker) or [Snap](/installation/snap) are recommended.
+
+## Prerequisites
+
+Before you begin, you need the following installed:
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Git | Any recent version | For cloning the repository |
+| Node.js | v22.22.2 | See the Dockerfile for the exact version used in releases |
+| npm | 10.9.2 | Installed alongside Node.js |
+| Meteor | METEOR@3.4 | Installed via the `rebuild-wekan.sh` script |
+| MongoDB | 7.x | Required for local development |
+
+<Note>
+  The exact Node.js version used in the official Docker image is `v22.22.2` and Meteor release is `METEOR@3.4`. Using a different Node.js version may cause build failures.
+</Note>
+
+## Installation
+
+<Steps>
+  <Step title="Configure git">
+    Set your identity and SSH key for GitHub access:
+
+    ```bash
+    sudo apt -y install git
+
+    git config --global user.name "Yourfirstname Yourlastname"
+    git config --global user.email email-address-you-use-at-github@example.com
+    git config --global push.default simple
+    ```
+
+    Configure SSH access in `~/.ssh/config` (use tabs for indentation):
+
+    ```
+    Host *
+            IdentitiesOnly=yes
+
+    Host github.com
+            Hostname github.com
+            User YourGithubUsername
+            IdentityFile ~/.ssh/id_rsa
+    ```
+
+    If you don't have an SSH key yet:
+
+    ```bash
+    ssh-keygen
+    ```
+
+    Add the resulting public key (`~/.ssh/id_rsa.pub`) to your GitHub account.
+  </Step>
+
+  <Step title="Add Meteor to PATH">
+    Edit `~/.bashrc` and add Meteor to your PATH at the bottom:
+
+    ```bash
+    export PATH=~/.meteor:$PATH
+    ```
+
+    Reload your shell or source the file:
+
+    ```bash
+    source ~/.bashrc
+    ```
+  </Step>
+
+  <Step title="Fork and clone the repository">
+    Fork `https://github.com/wekan/wekan` on GitHub, then clone your fork:
+
+    ```bash
+    mkdir repos
+    cd repos
+    git clone git@github.com:YourGithubUsername/wekan.git
+    cd wekan
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Run the `rebuild-wekan.sh` script and select option `1` to install all dependencies (Meteor, npm packages, etc.):
+
+    ```bash
+    ./rebuild-wekan.sh
+    ```
+
+    When prompted, enter `1` and press Enter.
+
+    <Note>
+      `rebuild-wekan.sh` manages the full build lifecycle. Option `1` installs dependencies, option `2` builds WeKan, and option `3` starts WeKan in development mode.
+    </Note>
+  </Step>
+
+  <Step title="Build WeKan">
+    Run the script again and select option `2` to build:
+
+    ```bash
+    ./rebuild-wekan.sh
+    ```
+
+    Enter `2` and press Enter.
+  </Step>
+
+  <Step title="Run in development mode">
+    Run the script again and select option `3` to start WeKan using `meteor`. In this mode, Meteor watches for file changes and automatically rebuilds:
+
+    ```bash
+    ./rebuild-wekan.sh
+    ```
+
+    Enter `3` and press Enter.
+
+    WeKan will be available at:
+
+    ```
+    http://localhost:4000
+    ```
+
+    Register and log in to create your first user. The first registered user becomes the administrator.
+
+    <Warning>
+      Development mode uses `meteor` directly and is not suitable for production. File changes trigger automatic rebuilds, but sometimes a full rebuild (option `2`) is needed after stopping with `Ctrl+C`.
+    </Warning>
+  </Step>
+</Steps>
+
+## Environment variables
+
+When running from source (outside of Docker), set these environment variables before starting WeKan:
+
+| Variable | Example value | Description |
+|----------|--------------|-------------|
+| `ROOT_URL` | `http://localhost/wekan` | The public URL of your WeKan instance. Required for internal links to work. |
+| `MONGO_URL` | `mongodb://127.0.0.1:27017/admin` | MongoDB connection string. |
+| `PORT` | `3000` | Port WeKan listens on. |
+| `MAIL_URL` | `smtp://user:pass@mailserver.example.com:25/` | SMTP connection string for outgoing email. |
+| `WITH_API` | `true` | Enables the WeKan REST API. |
+| `NODE_ENV` | `production` | Set to `production` for production builds. |
+
+## Running as a systemd service
+
+To run WeKan as a persistent background service, create `/etc/systemd/system/wekan@.service`:
+
+```bash
+; see `man systemd.unit` for configuration details
+; the man section also explains *specifiers* `%x`
+; update <username> with username below
+
+[Unit]
+Description=Wekan server %I
+Documentation=https://github.com/wekan/wekan
+After=network-online.target
+Wants=network-online.target
+Wants=systemd-networkd-wait-online.service
+
+[Service]
+ExecStart=/usr/local/bin/node /home/<username>/repos/wekan/.build/bundle/main.js
+Restart=on-failure
+StartLimitInterval=86400
+StartLimitBurst=5
+RestartSec=10
+ExecReload=/bin/kill -USR1 $MAINPID
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=Wekan
+User=<username>
+Group=<username>
+Environment=NODE_ENV=production
+Environment=PWD=/home/<username>/repos/wekan/.build/bundle
+Environment=PORT=3000
+Environment=HTTP_FORWARDED_COUNT=1
+Environment=MONGO_URL=mongodb://127.0.0.1:27017/admin
+Environment=ROOT_URL=http://localhost/wekan
+Environment=MAIL_URL=smtp://user:pass@mailserver.example.com:25/
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Replace `<username>` with the Linux user that owns the WeKan files.
+
+To start WeKan and enable it at boot:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start wekan@<username>
+sudo systemctl enable wekan@<username>
+```
+
+To stop and disable:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl stop wekan@<username>
+sudo systemctl disable wekan@<username>
+```
+
+## Keeping dependencies up to date
+
+<CodeGroup>
+
+```bash Update npm packages
+npm update
+```
+
+```bash Check for vulnerabilities
+npm audit
+```
+
+```bash Fix vulnerable packages
+npm audit fix
+```
+
+```bash Force-fix vulnerable packages
+npm audit fix --force
+```
+
+```bash Update Meteor
+meteor update
+```
+
+```bash Update to a specific Meteor release
+meteor update --release METEOR@3.4
+```
+
+```bash Update all Meteor packages
+meteor update --release METEOR@3.4 --all-packages
+```
+
+</CodeGroup>
+
+<Note>
+  If you change Node.js or Meteor versions, you may need to reset Meteor's build cache:
+  ```bash
+  meteor reset
+  ```
+</Note>
+
+## Adding a markdown-it plugin
+
+WeKan uses [markdown-it](https://github.com/markdown-it/markdown-it) for rendering markdown in cards (since v4.29). To add a new plugin:
+
+```bash
+meteor npm install markdown-it-something --save
+```
+
+Then edit `wekan/packages/markdown/src-integration.js` to register the plugin, following the pattern used by the existing emoji plugin.
+
+## Submitting changes
+
+After making and testing your changes:
+
+```bash
+git add --all
+git commit -m "Added plugin markdown-it-something."
+git push
+```
+
+Then open a pull request from your fork at `https://github.com/YOUR-GITHUB-USERNAME/wekan`.

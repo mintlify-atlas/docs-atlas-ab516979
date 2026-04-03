@@ -1,0 +1,223 @@
+---
+title: "Import and Export"
+description: "Migrate data between WeKan and other tools"
+---
+
+WeKan can import boards from Trello, Jira, Asana, CSV/TSV files, and previous WeKan exports. You can export any board to JSON, and work with board data in CSV or Excel via the REST API.
+
+## Importing a board
+
+<Tabs>
+  <Tab title="From Trello">
+    Trello export files are the most complete import source WeKan supports. Labels, lists, cards, comments, members, and attachments all come across.
+
+    <Steps>
+      <Step title="Create WeKan accounts for your team">
+        Register a WeKan account for each person who was a member of the Trello board. You can reuse the exact same usernames from Trello — WeKan will map them automatically during import.
+
+        <Tip>
+          Matching usernames saves a manual mapping step. If usernames differ, WeKan prompts you to map each Trello user to the correct WeKan user.
+        </Tip>
+      </Step>
+      <Step title="Export the board from Trello">
+        In Trello, open the board menu (**Show Menu → More → Print and Export → Export JSON**). Save the resulting JSON file to your computer.
+
+        If you have many boards, use the community script [trello-backup](https://github.com/mattab/trello-backup) to automate the export step.
+      </Step>
+      <Step title="Start the import in WeKan">
+        On the WeKan home screen, click **Add a new board**. In the popup, click **Import from Trello**.
+      </Step>
+      <Step title="Paste the JSON">
+        Open the Trello JSON file in a text editor, select all, copy, and paste the content into the import field. Click **Import**.
+      </Step>
+      <Step title="Map users (if needed)">
+        If any Trello usernames do not match existing WeKan usernames, WeKan shows a mapping dialog. Select the correct WeKan user for each Trello member and click **Done**.
+      </Step>
+    </Steps>
+
+    #### Known limitations
+
+    - Activity history (who did what, when) is not imported.
+    - Non-member contributions (comments on public boards) are attached to the user performing the import.
+    - Trello does not export comments posted before approximately December 2014.
+    - Attachment downloads are not particularly robust for large boards — if you have many or large attachments, allow extra time and verify the result.
+
+    <Note>
+      Attachments are downloaded from Trello's servers and re-hosted on your WeKan instance during import. The process has no progress indicator.
+    </Note>
+  </Tab>
+
+  <Tab title="From Jira">
+    WeKan does not have a direct Jira importer. The recommended path is a two-step migration: **Jira → Trello → WeKan**.
+
+    <Steps>
+      <Step title="Set up a Trello account">
+        Create a free Trello account and a new board to hold the migrated Jira project.
+      </Step>
+      <Step title="Sync with Unito">
+        Install the [Unito Sync](https://unito.io) Power-Up in Trello (a 14-day free trial is available). Create a new "flow" in Unito that connects your Jira project to the Trello board and run the synchronization.
+
+        Unito carries over cards, comments, and attachment links from Jira. Direct links replace actual attachment files.
+
+        <Warning>
+          Each Jira project must be migrated separately. Plan time to review and clean up the data after sync.
+        </Warning>
+      </Step>
+      <Step title="Export from Trello">
+        In Trello, open the board menu (**Show Menu → More → Print and Export → Export JSON**) and save the file.
+      </Step>
+      <Step title="Import into WeKan">
+        Follow the [Trello import steps](#from-trello) above to bring the board into WeKan.
+      </Step>
+    </Steps>
+
+    <Note>
+      Community members have also reported success with [TaskAdapter](https://taskadapter.com/), though it may have compatibility issues with newer Jira API token authentication on Jira Server.
+    </Note>
+  </Tab>
+
+  <Tab title="From Asana">
+    Asana supports exporting individual projects as CSV or JSON. Import the Asana export into Trello first (Trello has a built-in Asana importer), then follow the Trello import path into WeKan.
+
+    <Steps>
+      <Step title="Export from Asana">
+        In Asana, open the project, click the three-dot menu, and select **Export / Print → CSV** or **JSON**.
+      </Step>
+      <Step title="Import into Trello">
+        Use Trello's **Import from Asana** option (available from the board creation screen) to bring the Asana data into a Trello board.
+      </Step>
+      <Step title="Export from Trello and import into WeKan">
+        Export the Trello board as JSON and import it into WeKan as described in the Trello tab.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="From WeKan">
+    You can re-import a previously exported WeKan board JSON file. This is useful for migrating between WeKan instances or restoring from a board-level backup.
+
+    <Steps>
+      <Step title="Export the source board">
+        See [Exporting a WeKan board to JSON](#exporting-a-wekan-board-to-json) below.
+      </Step>
+      <Step title="Import on the target instance">
+        On the target WeKan instance, click **Add a new board → Import from WeKan**. Paste the JSON content and click **Import**.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="From CSV / TSV">
+    WeKan can import boards from comma-separated (CSV) or tab-separated (TSV) files.
+
+    <Steps>
+      <Step title="Prepare your file">
+        Format your data with the columns WeKan expects. Download the sample files to use as a template:
+        - [`board-import.csv`](https://github.com/wekan/wekan/blob/main/docs/ImportExport/CSV/board-import.csv)
+        - [`board-import.tsv`](https://github.com/wekan/wekan/blob/main/docs/ImportExport/CSV/board-import.tsv)
+      </Step>
+      <Step title="Open the import dialog">
+        Click your **username → All Boards → Add Board → Import → From CSV/TSV**.
+      </Step>
+      <Step title="Upload your file">
+        Select your prepared CSV or TSV file and confirm the import.
+      </Step>
+    </Steps>
+
+    <Note>
+      The CSV importer covers the core board structure. It may not yet support all columns present in the database (such as custom fields). Contributions to expand coverage are welcome.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Exporting a WeKan board to JSON
+
+<Steps>
+  <Step title="Open the board menu">
+    On the board you want to export, click **≡ Menu**.
+  </Step>
+  <Step title="Click Export board">
+    Scroll down and click **Export board**. WeKan generates a full JSON export including cards, lists, swimlanes, comments, labels, members, and attachments (base64-encoded).
+  </Step>
+  <Step title="Save the file">
+    Your browser downloads the JSON file. Store it somewhere safe — it contains all board data including any embedded attachments.
+  </Step>
+</Steps>
+
+You can also export a board via the API without opening the browser:
+
+```bash
+curl "https://Bearer:YOUR_API_KEY@wekan.example.com/api/boards/BOARD_ID/export?authToken=YOUR_API_KEY" \
+  > my-board.json
+```
+
+## Exporting to Excel
+
+WeKan does not have a built-in Excel export, but you can use the REST API to pull card data and write it to a spreadsheet programmatically.
+
+<Steps>
+  <Step title="Authenticate">
+    Exchange your credentials for an auth token:
+
+    ```bash
+    curl -H "Content-type: application/json" \
+         https://wekan.example.com/users/login \
+         -d '{"email": "you@example.com", "password": "yourpassword"}'
+    ```
+
+    Response:
+
+    ```json
+    {
+      "id": "ABCDEFG123456",
+      "token": "AUTH-TOKEN",
+      "tokenExpires": "2026-07-15T14:23:18.313Z"
+    }
+    ```
+  </Step>
+  <Step title="Fetch card data">
+    Use the token to read cards from a specific list:
+
+    ```bash
+    curl -H "Authorization: Bearer AUTH-TOKEN" \
+         -H "Content-type: application/json" \
+         https://wekan.example.com/api/boards/BOARD_ID/lists/LIST_ID/cards
+    ```
+  </Step>
+  <Step title="Update cards from Excel via VBA">
+    If you are using Excel VBA, you can send changes back to WeKan using a `PUT` request:
+
+    ```bash
+    curl -H "Authorization: Bearer AUTH-TOKEN" \
+         -H "Content-type: application/json" \
+         -X PUT \
+         https://wekan.example.com/api/boards/BOARD_ID/lists/LIST_ID/cards/CARD_ID \
+         -d '{"title": "Updated title", "description": "Updated description"}'
+    ```
+
+    From VBA, you can call `curl.exe` with these parameters or use VBA's native HTTP object (`MSXML2.XMLHTTP`) to make the same requests.
+  </Step>
+</Steps>
+
+<Tip>
+The [VBA-Web](https://github.com/VBA-tools/VBA-Web) and [VBA-JSON](https://github.com/VBA-tools/VBA-JSON) libraries make it straightforward to consume WeKan's REST API directly from Excel without needing curl.
+</Tip>
+
+## Exporting individual cards to PDF
+
+WeKan does not have a built-in PDF export per card. You can print a card's detail view from the browser (**File → Print** or `Ctrl+P`) and choose "Save as PDF" in the print dialog.
+
+<AccordionGroup>
+  <Accordion title="Troubleshooting: import fails with no error message">
+    - Confirm the JSON is valid by pasting it into a tool like [jsonlint.com](https://jsonlint.com).
+    - For Trello imports, make sure you exported using **Export JSON**, not the CSV option.
+    - Very large boards (hundreds of cards with many attachments) can time out. Try splitting the export into smaller boards in Trello before importing.
+  </Accordion>
+  <Accordion title="Troubleshooting: users are not mapped correctly after Trello import">
+    After import, WeKan shows a user-mapping dialog if usernames differ. If you skipped or dismissed that dialog, open the board settings and re-assign card members manually. Using matching usernames in advance avoids this entirely.
+  </Accordion>
+  <Accordion title="Troubleshooting: attachments are missing after import">
+    Attachments are downloaded from Trello's CDN during import. If your WeKan server has limited outbound internet access, or the board has very large files, downloads may fail silently. Check your server's network connectivity and retry the import. You can also use the [trello-attachments-downloader](https://github.com/wekan/trello-attachments-downloader) script to handle attachments separately.
+  </Accordion>
+  <Accordion title="Troubleshooting: CSV import does not show all columns">
+    The CSV importer supports the core board schema. Columns for newer features (custom fields, advanced metadata) may not yet be supported. Check the latest [CSV import pull request](https://github.com/wekan/wekan/pull/3081) for the current field list.
+  </Accordion>
+</AccordionGroup>

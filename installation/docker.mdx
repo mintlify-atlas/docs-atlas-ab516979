@@ -1,0 +1,298 @@
+---
+title: "Docker Installation"
+description: "Deploy WeKan using Docker Compose"
+---
+
+WeKan's official Docker Compose setup bundles the WeKan application with a MongoDB database, and is the recommended way to run WeKan in production.
+
+## System requirements
+
+| Resource | Minimum | Recommended (production) |
+|----------|---------|--------------------------|
+| RAM      | 1 GB free for WeKan | 4 GB total system RAM |
+| Disk     | Enough free space + monitoring | Set up low-disk alerts — running out of disk corrupts the MongoDB database |
+| OS       | Any 64-bit Linux, macOS, or Windows with Docker | 64-bit Linux |
+
+<Warning>
+  If your server runs out of disk space, the MongoDB database will be corrupted. Make sure you have disk space alerts configured before going to production.
+</Warning>
+
+## Install Docker
+
+Before proceeding, install [Docker Engine](https://docs.docker.com/engine/install/) and the Docker Compose plugin for your operating system.
+
+## Installation
+
+<Steps>
+  <Step title="Get the docker-compose.yml file">
+    Download the official `docker-compose.yml` from the WeKan repository:
+
+    ```bash
+    curl -O https://raw.githubusercontent.com/wekan/wekan/main/docker-compose.yml
+    ```
+
+    Or clone the full repository:
+
+    ```bash
+    git clone https://github.com/wekan/wekan
+    cd wekan
+    ```
+  </Step>
+
+  <Step title="Configure ROOT_URL and other settings">
+    Open `docker-compose.yml` and set `ROOT_URL` to the URL where WeKan will be accessed. This is the most important setting — without it, opening cards and other internal links will not work correctly.
+
+    ```yaml
+    # If running locally on the same machine:
+    - ROOT_URL=http://localhost
+
+    # If running on a LAN server:
+    - ROOT_URL=http://192.168.1.100
+
+    # If running behind a reverse proxy with SSL:
+    - ROOT_URL=https://boards.example.com
+    ```
+
+    <Note>
+      Do not add single quotes `''` to variable values. Spaces in values work without quotes.
+    </Note>
+  </Step>
+
+  <Step title="Start WeKan">
+    Start both the WeKan app and the MongoDB database in the background:
+
+    ```bash
+    docker compose up -d
+    ```
+
+    To verify both containers are running:
+
+    ```bash
+    docker ps
+    ```
+
+    You should see `wekan-app` and `wekan-db` listed as running.
+  </Step>
+
+  <Step title="Open WeKan in your browser">
+    Navigate to the URL you set as `ROOT_URL`. By default, WeKan listens on port 80:
+
+    ```
+    http://localhost
+    ```
+
+    The first registered user automatically becomes the administrator and gets access to the Admin Panel.
+  </Step>
+</Steps>
+
+## The docker-compose.yml file
+
+The complete `docker-compose.yml` as shipped in the WeKan repository:
+
+```yaml
+# Note: Do not add single quotes '' to variables. Having spaces still works without quotes where required.
+
+services:
+
+  wekandb:
+    image: mongo:7
+    container_name: wekan-db
+    restart: always
+    command: mongod --logpath /dev/null --oplogSize 128 --quiet
+    networks:
+      - wekan-tier
+    expose:
+      - 27017
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - wekan-db:/data/db
+      - wekan-db-dump:/dump
+
+  wekan:
+    image: ghcr.io/wekan/wekan:latest
+    container_name: wekan-app
+    restart: always
+    networks:
+      - wekan-tier
+    ports:
+      # Docker outsideport:insideport. Do not add anything extra here.
+      # For example, if you want to have wekan on port 3001,
+      # use 3001:8080 . Do not add any extra address etc here.
+      - 80:8080
+    environment:
+      - WRITABLE_PATH=/data
+      - MONGO_URL=mongodb://wekandb:27017/wekan
+      - ROOT_URL=http://localhost
+      - MAIL_URL=smtp://<mail_url>:25/?ignoreTLS=true&tls={rejectUnauthorized:false}
+      - MAIL_FROM=Wekan Notifications <noreply.wekan@mydomain.com>
+      - MONGO_OPLOG_URL=mongodb://wekandb:27017/local?replicaSet=rs0
+      - WITH_API=true
+      - RICHER_CARD_COMMENT_EDITOR=false
+      - CARD_OPENED_WEBHOOK_ENABLED=false
+      - BIGEVENTS_PATTERN=NONE
+      - BROWSER_POLICY_ENABLED=true
+      - LDAP_BACKGROUND_SYNC_INTERVAL=''
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - wekan-files:/data:rw
+
+volumes:
+  wekan-files:
+    driver: local
+  wekan-db:
+    driver: local
+  wekan-db-dump:
+    driver: local
+
+networks:
+  wekan-tier:
+    driver: bridge
+```
+
+<Note>
+  The full `docker-compose.yml` in the repository contains many more commented-out options for LDAP, OAuth2, SAML, S3 file storage, and more. The snippet above shows only the active (uncommented) defaults.
+</Note>
+
+## Environment variables
+
+The key environment variables for the `wekan` service:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROOT_URL` | `http://localhost` | The public URL of your WeKan instance. Must match what users type in their browser. |
+| `MONGO_URL` | `mongodb://wekandb:27017/wekan` | MongoDB connection string. Points to the `wekandb` service. |
+| `MONGO_OPLOG_URL` | `mongodb://wekandb:27017/local?replicaSet=rs0` | Enables MongoDB OpLog for real-time updates. Highly recommended — without it Meteor falls back to polling, which increases CPU usage 3–5x and latency from ~50ms to ~2000ms. |
+| `MAIL_URL` | *(example value)* | SMTP connection string for outgoing email. Use `smtps://` for SSL. Special characters must be URL-encoded. |
+| `MAIL_FROM` | *(example value)* | The sender name and address for notification emails. |
+| `WRITABLE_PATH` | `/data` | Path inside the container where uploaded files are stored. |
+| `WITH_API` | `true` | Enables the WeKan REST API. Set to `false` to disable it — this also disables board export. |
+| `BROWSER_POLICY_ENABLED` | `true` | Enables browser security policy. Disabling this is not recommended. |
+
+<Tip>
+  For production deployments, always use a specific version tag instead of `latest`, for example `image: ghcr.io/wekan/wekan:v6.89`. This prevents unexpected changes when you restart containers.
+</Tip>
+
+## Common management commands
+
+<CodeGroup>
+
+```bash Start WeKan
+docker compose up -d
+```
+
+```bash Stop WeKan
+docker compose stop
+```
+
+```bash View running containers
+docker ps
+```
+
+```bash Go inside the WeKan app container
+docker exec -it wekan-app bash
+```
+
+```bash Go inside the MongoDB container
+docker exec -it wekan-db bash
+```
+
+</CodeGroup>
+
+## Updating to the latest version
+
+<Warning>
+  Always back up your database before upgrading. If upgrading MongoDB from 3.x to 4.x, use `--noIndexRestore` during restore. See the [backup docs](https://github.com/wekan/wekan/tree/main/docs/Backup).
+</Warning>
+
+<Steps>
+  <Step title="Stop WeKan">
+    ```bash
+    docker compose stop
+    ```
+  </Step>
+
+  <Step title="Remove the old WeKan app container">
+    Only remove `wekan-app` — do not touch `wekan-db`, which holds all your data.
+
+    ```bash
+    docker rm wekan-app
+    ```
+  </Step>
+
+  <Step title="Update docker-compose.yml">
+    Get the latest `docker-compose.yml` from the WeKan repository to ensure it has the correct image tag, for example:
+
+    ```yaml
+    image: ghcr.io/wekan/wekan:latest
+    # or pin a specific version:
+    image: ghcr.io/wekan/wekan:v6.89
+    ```
+  </Step>
+
+  <Step title="Start WeKan">
+    ```bash
+    docker compose up -d
+    ```
+  </Step>
+</Steps>
+
+## Backup and restore
+
+To back up the MongoDB database from inside the container:
+
+```bash
+docker exec -it wekan-db bash
+cd /data
+mongodump
+exit
+docker cp wekan-db:/data/dump .
+```
+
+To restore:
+
+```bash
+# 1. Stop WeKan
+docker stop wekan-app
+
+# 2. Copy dump into the database container
+docker cp dump wekan-db:/data/
+
+# 3. Restore
+docker exec -it wekan-db bash
+cd /data
+mongorestore --drop
+exit
+
+# 4. Start WeKan
+docker start wekan-app
+```
+
+## FerretDB option
+
+The repository also ships a `docker-compose-ferretdb.yml` as an alternative to MongoDB. FerretDB is a MongoDB-compatible proxy that stores data in PostgreSQL, which can be useful if you need a PostgreSQL-native backend.
+
+<Note>
+  The FerretDB setup (with `wekan-postgres`, `wekan-ferretdb`, and `wekan-migrate` services) is included as commented-out blocks inside the default `docker-compose.yml`. Uncomment those sections and point `MONGO_URL` to `mongodb://wekan-ferretdb:27017/wekan` to use it. FerretDB emulates the MongoDB OpLog via `--replication-set-name=rs0` for real-time DDP updates.
+</Note>
+
+## Image registries
+
+WeKan container images are available from three registries:
+
+<CodeGroup>
+
+```yaml GitHub Container Registry (recommended)
+image: ghcr.io/wekan/wekan:latest
+# Pinned version:
+image: ghcr.io/wekan/wekan:v6.89
+```
+
+```yaml Quay
+image: quay.io/wekan/wekan:latest
+```
+
+```yaml Docker Hub
+image: wekanteam/wekan:latest
+```
+
+</CodeGroup>

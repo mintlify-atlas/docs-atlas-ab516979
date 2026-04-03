@@ -1,0 +1,221 @@
+---
+title: "Swimlanes API"
+description: "Manage swimlanes within a board via the REST API"
+---
+
+<Note>
+  All endpoints require a Bearer token in the `Authorization` header. Swimlanes are horizontal rows on a Wekan board. Every card must belong to a swimlane.
+</Note>
+
+## Get all swimlanes
+
+Retrieve all swimlanes for a given board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/swimlanes` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board whose swimlanes you want to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/swimlanes
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique swimlane identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The swimlane title.
+</ResponseField>
+
+<ResponseField name="boardId" type="string">
+  The ID of the board this swimlane belongs to.
+</ResponseField>
+
+<ResponseField name="archived" type="boolean">
+  Whether the swimlane is archived.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the swimlane was created.
+</ResponseField>
+
+<ResponseField name="sort" type="number">
+  The sort order of the swimlane among other swimlanes on the board.
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  The color of the swimlane. Defaults to `silver`.
+</ResponseField>
+
+```json
+[
+  {
+    "_id": "W9m9YxQKT6zZrKzRW",
+    "title": "Default",
+    "boardId": "YRgy7Ku6uLFv2pYwZ",
+    "archived": false,
+    "createdAt": "2024-01-15T09:00:00.000Z",
+    "sort": 0,
+    "color": "silver"
+  }
+]
+```
+
+---
+
+## Create a swimlane
+
+Add a new swimlane to a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/swimlanes` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board where the swimlane will be created.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  The title of the new swimlane.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/swimlanes \
+     -d '{ "title": "Swimlane title text" }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created swimlane.
+</ResponseField>
+
+```json
+{
+  "_id": "W9m9YxQKT6zZrKzRW"
+}
+```
+
+---
+
+## Get a swimlane
+
+Retrieve details about a specific swimlane.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/swimlanes/:swimlaneId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board the swimlane belongs to.
+</ParamField>
+
+<ParamField path="swimlaneId" type="string" required>
+  The ID of the swimlane to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/swimlanes/W9m9YxQKT6zZrKzRW
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique swimlane identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The swimlane title.
+</ResponseField>
+
+<ResponseField name="boardId" type="string">
+  The ID of the board this swimlane belongs to.
+</ResponseField>
+
+<ResponseField name="archived" type="boolean">
+  Whether the swimlane is archived.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the swimlane was created.
+</ResponseField>
+
+<ResponseField name="sort" type="number">
+  Sort order among other swimlanes on the board.
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  The color of the swimlane.
+</ResponseField>
+
+```json
+{
+  "_id": "W9m9YxQKT6zZrKzRW",
+  "title": "Default",
+  "boardId": "YRgy7Ku6uLFv2pYwZ",
+  "archived": false,
+  "createdAt": "2024-01-15T09:00:00.000Z",
+  "sort": 0,
+  "color": "silver"
+}
+```
+
+---
+
+## Delete a swimlane
+
+Permanently delete a swimlane from a board.
+
+| Method   | Endpoint |
+| -------- | -------- |
+| `DELETE` | `/api/boards/:boardId/swimlanes/:swimlaneId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board the swimlane belongs to.
+</ParamField>
+
+<ParamField path="swimlaneId" type="string" required>
+  The ID of the swimlane to delete.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X DELETE \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/swimlanes/W9m9YxQKT6zZrKzRW
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the deleted swimlane.
+</ResponseField>
+
+```json
+{
+  "_id": "W9m9YxQKT6zZrKzRW"
+}
+```
+
+<Warning>
+  Deleting a swimlane is permanent. Cards that belong to the swimlane may be affected. Ensure cards are moved to another swimlane before deletion if you want to preserve them.
+</Warning>

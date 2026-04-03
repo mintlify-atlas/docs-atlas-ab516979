@@ -1,0 +1,232 @@
+---
+title: "Cards"
+description: "Create and manage cards with rich content, assignments, and tracking"
+---
+
+A **card** represents a single unit of work on a board — a task, bug, story, or anything your team tracks. Cards live inside lists and move across them as work progresses.
+
+## Creating a card
+
+<Steps>
+  <Step title="Find the target list">
+    Open the board where you want to create the card.
+  </Step>
+  <Step title="Click Add card">
+    Click **+ Add card** at the bottom of the list you want the card to start in.
+  </Step>
+  <Step title="Enter a title">
+    Type a title for the card and press **Enter**. The card appears at the bottom of the list immediately.
+  </Step>
+</Steps>
+
+<Tip>
+  Card titles support Markdown. You can use **bold**, _italic_, or `inline code` directly in the title.
+</Tip>
+
+## Card fields
+
+Open a card by clicking on it. The card detail view exposes all of the fields below.
+
+<CardGroup cols={2}>
+  <Card title="Title" icon="text-cursor">
+    The card name. Editable by clicking it directly in the card detail view.
+  </Card>
+  <Card title="Description" icon="align-left">
+    A freeform text area that supports full GitHub-Flavored Markdown, including tables, code blocks, and task lists.
+  </Card>
+  <Card title="Labels" icon="tag">
+    Color-coded labels defined at the board level. Apply multiple labels to a single card for categorization and filtering.
+  </Card>
+  <Card title="Members" icon="user">
+    Assign one or more board members to the card. Assigned members appear as avatar icons on the card miniature.
+  </Card>
+  <Card title="Due date" icon="calendar">
+    A deadline for the card. Overdue cards highlight in red on the board. Date format follows your account language setting.
+  </Card>
+  <Card title="Spent time" icon="clock">
+    Log hours worked on the card for basic time tracking.
+  </Card>
+</CardGroup>
+
+### Markdown in descriptions and comments
+
+WeKan uses **GitHub-Flavored Markdown** (GFM) powered by `markdown-it`. You can use the full GFM syntax in card descriptions and comments.
+
+Common examples:
+
+```markdown
+## Heading
+
+**Bold text** and _italic text_
+
+- Bullet list item
+- Another item
+
+1. Ordered list
+
+`inline code`
+
+> Blockquote
+```
+
+Code blocks with syntax highlighting:
+
+````markdown
+```python
+def greet(name):
+    return f"Hello, {name}!"
+```
+````
+
+<Note>
+  To escape an ordered list number so it renders as literal text (e.g., `3. Something`), write `3\. Something` with a backslash before the period.
+</Note>
+
+Markdown is also available in:
+- Card titles
+- Board names (in board view only)
+- Comment text
+
+## Checklists
+
+Checklists let you break a card into smaller trackable steps.
+
+<Steps>
+  <Step title="Open the card">
+    Click a card to open the detail view.
+  </Step>
+  <Step title="Add a checklist">
+    Click **Add Checklist** in the card detail sidebar. Give the checklist a name.
+  </Step>
+  <Step title="Add items">
+    Type an item and press **Enter** to add it. Repeat for each step.
+  </Step>
+  <Step title="Check off items">
+    Click the checkbox next to an item to mark it complete. The card miniature shows a progress counter (e.g., `2/5`).
+  </Step>
+</Steps>
+
+<Tip>
+  You can copy a checklist from one card to many others at once. Open the card hamburger menu and select **Copy Checklist Template to Many Cards**.
+</Tip>
+
+## Attachments
+
+Cards support file and image attachments.
+
+### Attaching a file
+
+<Steps>
+  <Step title="Open the card menu">
+    Click the **≡** (hamburger) icon on the card miniature or inside the card detail view.
+  </Step>
+  <Step title="Select Edit Attachments">
+    Click **Edit Attachments** to open the attachment panel.
+  </Step>
+  <Step title="Choose an upload method">
+    Select **Clipboard** (paste) or **Drag and drop**.
+  </Step>
+  <Step title="Upload">
+    Drag an image or file onto the drop zone, or press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste an image from your clipboard.
+  </Step>
+</Steps>
+
+After the first attachment is added, an **Add Attachment** button appears next to it for subsequent uploads.
+
+<Note>
+  Images attached to a card can be set as the card's **cover image**, making them visible on the card miniature on the board.
+</Note>
+
+## Comments
+
+<Steps>
+  <Step title="Open the card">
+    Click the card to open its detail view.
+  </Step>
+  <Step title="Write a comment">
+    Scroll to the **Comments** section at the bottom. Click the text field and type your comment. Comments support full Markdown.
+  </Step>
+  <Step title="Submit">
+    Click **Add Comment** or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.
+  </Step>
+</Steps>
+
+## Moving and copying cards
+
+### Move a card
+
+Drag the card miniature from one list to another on the same board. To move a card to a different board:
+
+<Steps>
+  <Step title="Open the card">
+    Click the card to open its detail view.
+  </Step>
+  <Step title="Open the card menu">
+    Click the **≡** icon in the card detail header.
+  </Step>
+  <Step title="Select Move Card">
+    Choose **Move Card**, then pick the target board, swimlane, and list.
+  </Step>
+</Steps>
+
+### Copy a card
+
+Follow the same steps as moving, but select **Copy Card** instead. You can also use **multi-selection** to move multiple cards at once: click the checkmark icon on each card miniature to select them, then drag the selection to the target list.
+
+## Card cover images
+
+To set an image as the card cover:
+
+<Steps>
+  <Step title="Attach an image">
+    Add an image attachment as described above.
+  </Step>
+  <Step title="Set as cover">
+    Click the image thumbnail in the card detail view and select **Set as Cover**.
+  </Step>
+</Steps>
+
+The image then appears as a banner at the top of the card miniature on the board, making it easy to identify visually.
+
+## Linked cards
+
+WeKan supports **linked cards** — cards that reference another card or board. A linked card shows the target card's title and acts as a clickable shortcut.
+
+To link a card, open the card hamburger menu and select **Link Card** or **Link Board**, then search for the target.
+
+## Archiving and restoring cards
+
+To archive a card, open the card detail menu and click **Archive**. Archived cards are hidden from the board but not deleted.
+
+To restore an archived card:
+
+<Steps>
+  <Step title="Open the board menu">
+    Click the board **≡** icon in the top-right corner.
+  </Step>
+  <Step title="Open Archived Cards">
+    Click **Archived Cards** to see all archived cards for this board.
+  </Step>
+  <Step title="Restore">
+    Click **Restore** next to the card you want to bring back.
+  </Step>
+</Steps>
+
+<Note>
+  Deleting a card is permanent. The archive is the recommended way to remove a card from view while keeping the option to recover it.
+</Note>
+
+## Keyboard shortcuts
+
+Press <kbd>?</kbd> on any board to open the keyboard shortcut reference panel. The panel lists all available shortcuts for navigation, card creation, and filtering.
+
+<AccordionGroup>
+  <Accordion title="Common shortcuts">
+    | Shortcut | Action |
+    |---|---|
+    | <kbd>?</kbd> | Open keyboard shortcuts panel |
+    | <kbd>F</kbd> | Open filter panel |
+    | <kbd>Q</kbd> | Filter to your assigned cards |
+    | <kbd>Esc</kbd> | Close open panels and dialogs |
+  </Accordion>
+</AccordionGroup>

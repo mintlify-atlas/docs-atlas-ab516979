@@ -1,0 +1,140 @@
+---
+title: "API Overview"
+description: "Introduction to the WeKan REST API"
+---
+
+The WeKan REST API lets you control and extend WeKan programmatically — create boards, manage cards, administer users, and automate workflows from any HTTP client or programming language.
+
+<Note>
+  All examples in this documentation use `curl`. You can use any language or HTTP client: Python, JavaScript, Go, Ruby, PHP, and so on.
+</Note>
+
+## Base URL
+
+All API endpoints are relative to your WeKan host:
+
+```
+http://your-wekan-host/api/...
+```
+
+For example, to list boards on a server running at `wekan.example.com`:
+
+```
+https://wekan.example.com/api/boards
+```
+
+The `/users/login` and `/users/register` endpoints sit at the root (not under `/api/`):
+
+```
+https://wekan.example.com/users/login
+```
+
+## Response format
+
+All responses are JSON. Successful responses return the requested data directly or as an object. Error responses include `error` and `reason` fields.
+
+```json
+{
+  "error": "Unauthorized",
+  "reason": "Unauthorized"
+}
+```
+
+## Authentication
+
+Most endpoints require a Bearer token in the `Authorization` header. Obtain a token by posting your credentials to `/users/login`. See [Authentication](/api/authentication) for the full flow.
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-wekan.example.com/api/users/YOUR_USER_ID/boards
+```
+
+## Example: list boards for a user
+
+Boards are listed per user, not globally. First get your user ID from the login response, then query that user's boards.
+
+<CodeGroup>
+
+```bash curl
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-wekan.example.com/api/users/XQMZgynx9M79qTtQc/boards
+```
+
+```python Python
+import requests
+
+user_id = "XQMZgynx9M79qTtQc"  # from login response
+response = requests.get(
+    f"https://your-wekan.example.com/api/users/{user_id}/boards",
+    headers={"Authorization": "Bearer YOUR_TOKEN"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const userId = "XQMZgynx9M79qTtQc"; // from login response
+const response = await fetch(
+  `https://your-wekan.example.com/api/users/${userId}/boards`,
+  { headers: { Authorization: "Bearer YOUR_TOKEN" } }
+);
+const boards = await response.json();
+```
+
+</CodeGroup>
+
+Example response:
+
+```json
+[
+  {
+    "_id": "aBcDeFgH1234",
+    "title": "My Project",
+    "slug": "my-project"
+  }
+]
+```
+
+## API coverage
+
+The WeKan REST API covers the following resources:
+
+| Resource | Endpoints |
+| --- | --- |
+| **Boards** | Create, read, update, delete boards |
+| **Lists** | Manage lists within a board |
+| **Cards** | Create, update, move, and delete cards |
+| **Swimlanes** | Manage swimlanes on a board |
+| **Custom fields** | Define and assign custom fields |
+| **Checklists** | Add and manage card checklists |
+| **Users** | Create, list, enable/disable, and delete users |
+| **Integrations** | Manage webhook integrations per board |
+
+<Note>
+  The REST API is not yet complete. If an endpoint you need is missing, you can [open an issue](https://github.com/wekan/wekan/issues/new) to request it or submit a pull request to the `devel` branch.
+</Note>
+
+## Enabling the API
+
+The REST API is gated by the `WITH_API` environment variable. Make sure your WeKan instance is started with:
+
+```bash
+WITH_API=true
+```
+
+Requests to `/api/...` routes return a redirect to `/` when this variable is not set to `true`.
+
+## Production security
+
+<Warning>
+  Always use HTTPS in production. The login endpoint transmits credentials in the request body — sending them over plain HTTP exposes them to interception.
+</Warning>
+
+Follow these practices when calling the API from production systems:
+
+- **HTTPS only** — never call the API over plain HTTP in production.
+- **Token expiration** — implement a token rotation strategy. Tokens include a `tokenExpires` timestamp; refresh them before they expire.
+- **Least privilege** — use an account that has only the permissions required for your integration, not a global admin account.
+
+## Rate limiting
+
+WeKan does not enforce built-in API rate limits. If you are running a public-facing instance, apply rate limiting at your reverse proxy (for example, nginx or Caddy) to protect against abuse.

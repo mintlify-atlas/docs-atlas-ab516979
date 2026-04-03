@@ -1,0 +1,169 @@
+---
+title: "Boards and lists"
+description: "Organize your work with kanban boards and lists"
+---
+
+A **board** is a visual workspace that holds all of your project's lists and cards. Think of it as a digital kanban board where columns (lists) represent stages of work and sticky notes (cards) move left to right as work progresses.
+
+## Creating a board
+
+<Steps>
+  <Step title="Open the home screen">
+    After logging in, you land on the **All Boards** page. This is the home screen that shows every board you have access to.
+  </Step>
+  <Step title="Add a new board">
+    Click the **+ Add board** button. A creation form appears inline.
+  </Step>
+  <Step title="Name your board">
+    Type a name for the board. The name appears in the board header and the home screen tile.
+  </Step>
+  <Step title="Set visibility">
+    Choose **Private** or **Public** from the permission selector. See [Board visibility](#board-visibility) below for details.
+  </Step>
+  <Step title="Pick a color">
+    Select a background color for the board tile. The color also tints the board header when the board is open.
+  </Step>
+  <Step title="Create the board">
+    Press **Enter** or click **Create board**. WeKan opens the new board immediately.
+  </Step>
+</Steps>
+
+## Board visibility
+
+<CardGroup cols={2}>
+  <Card title="Private" icon="lock">
+    Only members explicitly added to the board can see or interact with it. Use this for sensitive or team-specific projects.
+  </Card>
+  <Card title="Public" icon="globe">
+    Visible to everyone — including unauthenticated users. Anyone with the link can view the board. Board admins still control who can edit cards and add members.
+  </Card>
+</CardGroup>
+
+<Note>
+  Visibility is set at the board level. A public board does not expose it to the internet — it only means other users on your WeKan instance can see it.
+</Note>
+
+## Board header
+
+When a board is open, the header across the top gives you quick access to key controls:
+
+| Control | What it does |
+|---|---|
+| **Members** | Shows avatar icons for each board member. Click an avatar to filter the board to cards assigned to that person. |
+| **Labels** | Opens the label manager to create, rename, or delete color-coded labels. |
+| **Filter** | Opens the filter panel to narrow cards by label, member, due date, or custom field value. |
+| **Search** | Searches card titles across the current board. |
+| **Hamburger menu** (≡) | Opens the board menu for settings, archiving, export, webhooks, and custom fields. |
+
+## Starring and watching boards
+
+- **Star a board**: On the home screen, hover over a board tile and click the star icon. Starred boards appear at the top of the home screen for quick access.
+- **Watch a board**: Open the board hamburger menu and toggle **Watch**. You receive notifications for all activity on watched boards. To stop notifications, click **Mute** in the same menu.
+
+## Managing members
+
+<Steps>
+  <Step title="Open the board menu">
+    Click the **≡** (hamburger) icon in the top-right corner of the board.
+  </Step>
+  <Step title="Select Members">
+    Click **Members** to open the member management panel.
+  </Step>
+  <Step title="Invite a member">
+    Type a username into the search field and select the user to add them to the board.
+  </Step>
+  <Step title="Set permissions">
+    Click a member's avatar or name to choose a permission level.
+  </Step>
+</Steps>
+
+Member permission levels:
+
+| Role | Can do |
+|---|---|
+| **Admin** | Full access: edit board settings, add/remove members, delete lists and cards |
+| **Normal** | Add and edit cards, move cards between lists |
+| **Comment only** | View cards and add comments, cannot move or edit cards |
+| **Worker** | Move cards, assign themselves to cards, and comment |
+| **Read only** | View the board without making any changes |
+
+## Lists
+
+Lists are the vertical columns on a board. Each list represents a stage of work (for example, **To Do**, **In Progress**, **Done**).
+
+### Adding a list
+
+Click **+ Add list** at the right edge of all existing lists. Type the list name and press **Enter**.
+
+### WIP limits
+
+Work-in-progress (WIP) limits cap the number of cards allowed in a list. When the limit is reached, the list header turns red as a visual warning.
+
+<Steps>
+  <Step title="Open list options">
+    Click the **≡** icon in the list header.
+  </Step>
+  <Step title="Set WIP limit">
+    Click **Edit WIP Limit**. Enter a maximum card count and choose between **Soft** (warning only) and **Hard** (blocks adding more cards) enforcement.
+  </Step>
+  <Step title="Enable the limit">
+    Toggle **Enable WIP Limit** on and save.
+  </Step>
+</Steps>
+
+<Tip>
+  Start with soft WIP limits to build awareness, then tighten to hard limits as your team grows comfortable with the constraint.
+</Tip>
+
+### Archiving and restoring lists
+
+To archive a list, click **≡** in the list header and select **Archive List**. The list and all its cards disappear from the board view but are not deleted.
+
+To restore archived lists:
+
+<Steps>
+  <Step title="Open the board menu">
+    Click **≡** in the top-right corner of the board.
+  </Step>
+  <Step title="Open Archived Lists">
+    Click **Archived Lists** to see every archived list for this board.
+  </Step>
+  <Step title="Restore">
+    Click **Restore** next to the list you want to bring back.
+  </Step>
+</Steps>
+
+<Note>
+  Deleting a list is permanent and cannot be undone. Prefer archiving to preserve data. If you need to delete cards quickly, drag them into a new temporary list and then delete the list — this is intentional; the extra steps prevent accidental deletion.
+</Note>
+
+## Archiving and restoring boards
+
+To archive an entire board, open the board hamburger menu and click **Archive Board**. The board disappears from the home screen but remains recoverable.
+
+To restore an archived board:
+
+<Steps>
+  <Step title="Go to the home screen">
+    Navigate to the **All Boards** page.
+  </Step>
+  <Step title="Show archived boards">
+    Click **Archived Boards** (or the archive icon depending on your version) to reveal archived boards.
+  </Step>
+  <Step title="Restore the board">
+    Click **Restore** next to the board you want to recover.
+  </Step>
+</Steps>
+
+## Multi-board navigation
+
+The **All Boards** home screen is your central hub. From here you can:
+
+- See all boards you belong to, organized into **Private** and **Public** sections
+- Access starred boards at the top for one-click navigation
+- Create new boards or create boards from templates
+- Switch between boards without using the browser's back button
+
+<Tip>
+  Use the keyboard shortcut <kbd>?</kbd> on any board to open the full list of keyboard shortcuts available in WeKan.
+</Tip>

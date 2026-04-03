@@ -1,0 +1,179 @@
+---
+title: "Templates"
+description: "Reuse board and card structures with templates"
+---
+
+WeKan templates let you save a board, list, or card structure once and reuse it as many times as you need. Templates eliminate repetitive setup for recurring projects, standard workflows, and onboarding processes.
+
+Templates are per-user: each account has its own **Templates** board accessible from the home screen.
+
+<Note>
+  If you create a user via the REST API or OAuth2, the Templates board may not be created automatically. You can create it manually by following the steps below.
+</Note>
+
+## Accessing the Templates board
+
+On the **All Boards** home screen, click **Templates** in the top-right area. This opens your personal Templates board, which has three swimlanes:
+
+| Swimlane | What it holds |
+|---|---|
+| **Card Templates** | Template cards you can insert into any board |
+| **List Templates** | Template lists (with their cards) you can insert into any board |
+| **Board Templates** | Full board structures you can create new boards from |
+
+## Board templates
+
+### Creating a board template
+
+<Steps>
+  <Step title="Open the Templates board">
+    From the home screen, click **Templates**.
+  </Step>
+  <Step title="Go to the Board Templates swimlane">
+    Scroll down to the **Board Templates** swimlane.
+  </Step>
+  <Step title="Add a list">
+    Click **+ Add list** inside the Board Templates swimlane and give it a name — this list represents one board template.
+  </Step>
+  <Step title="Add a card to the list">
+    Create a card in that list. The card represents the board template entry.
+  </Step>
+  <Step title="Open the board template">
+    Click the black folder icon on the card to open the full-screen board template view.
+  </Step>
+  <Step title="Build the template">
+    Add lists, cards, labels, swimlanes, and any other structure you want to reuse. Everything you add here becomes the starting state for boards created from this template.
+  </Step>
+</Steps>
+
+### Creating a board from a template
+
+<Steps>
+  <Step title="Go to the home screen">
+    Navigate to **All Boards**.
+  </Step>
+  <Step title="Click Add Board">
+    Click **+ Add board** but do not type a board name.
+  </Step>
+  <Step title="Click Template">
+    Click the **Template** option that appears below the name input.
+  </Step>
+  <Step title="Enter a title">
+    Type the name for the new board you are creating.
+  </Step>
+  <Step title="Select the template">
+    Search for your board template by name, or scroll to find it. Click it to select.
+  </Step>
+  <Step title="Confirm">
+    Click the template name. WeKan creates a new board with the full structure of the template, ready to use.
+  </Step>
+</Steps>
+
+## Card templates
+
+Card templates let you define a standard card layout — including description, checklist, labels, and custom fields — and stamp it into any board with a new title.
+
+### Creating a card template
+
+<Steps>
+  <Step title="Open the Templates board">
+    From the home screen, click **Templates**.
+  </Step>
+  <Step title="Go to the Card Templates swimlane">
+    Find the **Card Templates** swimlane.
+  </Step>
+  <Step title="Add a list">
+    Create a list inside the Card Templates swimlane. Each list can group related card templates (for example, **Bug Reports** or **Feature Requests**).
+  </Step>
+  <Step title="Add template cards">
+    Create cards inside the list. Open each card and fill in the description, checklists, labels, and any other structure that should carry over when the template is used.
+  </Step>
+</Steps>
+
+### Inserting a card from a template
+
+<Steps>
+  <Step title="Go to any board">
+    Navigate to the board where you want to insert a card.
+  </Step>
+  <Step title="Start adding a card">
+    Click **+ Add card** at the bottom of a list. Do not type a card name.
+  </Step>
+  <Step title="Click Template">
+    Click the **Template** option that appears.
+  </Step>
+  <Step title="Enter a title">
+    Type the title for the new card.
+  </Step>
+  <Step title="Select the card template">
+    Search for the card template by name or scroll to find it. Click the template card name.
+  </Step>
+  <Step title="Confirm">
+    WeKan creates the new card with your custom title and the full content from the template.
+  </Step>
+</Steps>
+
+## List templates
+
+List templates save a complete list — including all its cards — so you can replay it on any board.
+
+### Creating a list template
+
+<Steps>
+  <Step title="Open the Templates board">
+    From the home screen, click **Templates**.
+  </Step>
+  <Step title="Go to the List Templates swimlane">
+    Find the **List Templates** swimlane.
+  </Step>
+  <Step title="Create lists">
+    Add lists to the List Templates swimlane. Each list is one template.
+  </Step>
+  <Step title="Add cards and content">
+    Fill each template list with cards, labels, and other content that should appear when the template is used.
+  </Step>
+</Steps>
+
+### Inserting a list from a template
+
+<Steps>
+  <Step title="Go to any board">
+    Navigate to the board where you want to insert the list.
+  </Step>
+  <Step title="Start adding a list">
+    Click **+ Add list** at the right edge of all lists. Do not type a list name.
+  </Step>
+  <Step title="Click Template">
+    Click the **Template** option.
+  </Step>
+  <Step title="Enter a title">
+    Type the title for the new list.
+  </Step>
+  <Step title="Select the list template">
+    Search for the list template name or scroll to find it. Click it.
+  </Step>
+  <Step title="Confirm">
+    WeKan creates the new list with your title and all cards from the template.
+  </Step>
+</Steps>
+
+## Use cases
+
+<AccordionGroup>
+  <Accordion title="Recurring projects">
+    If your team runs the same project type repeatedly — sprint planning, client onboarding, event logistics — create a board template with your standard lists and initial cards. Each new engagement starts from a clean, consistent structure.
+  </Accordion>
+  <Accordion title="Bug report cards">
+    Create a card template for bug reports with a description section for **Steps to reproduce**, **Expected behavior**, and **Actual behavior**, plus a standard checklist: Reproduce → Fix → Test → Close. Every bug card starts with the same structure.
+  </Accordion>
+  <Accordion title="Onboarding workflows">
+    Build a list template called **New hire checklist** with cards for each onboarding task (laptop setup, accounts, training, etc.). Insert the template list into any board when a new team member joins.
+  </Accordion>
+  <Accordion title="Standard operating procedures">
+    Store SOPs as card templates. Each card template holds the step-by-step description and checklist for a procedure. Teams insert the card whenever the SOP needs to be executed and track completion via the checklist.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  Watch the [official board templates video](https://www.youtube.com/watch?v=K0_cP85Bvas) for a walkthrough of the full template workflow.
+</Tip>

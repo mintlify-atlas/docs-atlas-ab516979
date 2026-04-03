@@ -1,0 +1,360 @@
+---
+title: "Boards API"
+description: "Create, read, update, and delete boards via the REST API"
+---
+
+<Note>
+  All endpoints require a Bearer token in the `Authorization` header. Obtain a token by logging in via `POST /users/login` or registering via `POST /users/register`. Most board endpoints require admin-level authentication.
+</Note>
+
+## Get boards for a user
+
+Retrieve all boards associated with a specific user.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/users/:userId/boards` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="userId" type="string" required>
+  The ID of the user whose boards you want to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     http://localhost:3000/api/users/XQMZgynx9M79qTtQc/boards
+```
+
+---
+
+## Create a board
+
+Create a new board owned by a specified user.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards` |
+
+**Requires admin auth:** Yes
+
+### Request parameters
+
+<ParamField body="title" type="string" required>
+  The title of the board.
+</ParamField>
+
+<ParamField body="owner" type="string" required>
+  The user ID of the board owner. This is the Wekan user ID, not a username or email address.
+</ParamField>
+
+<ParamField body="isAdmin" type="boolean" default="true">
+  Whether the owner is an admin on this board.
+</ParamField>
+
+<ParamField body="isActive" type="boolean" default="true">
+  Whether the owner is an active member of this board.
+</ParamField>
+
+<ParamField body="isNoComments" type="boolean" default="false">
+  When `true`, the owner cannot add comments on this board.
+</ParamField>
+
+<ParamField body="isCommentOnly" type="boolean" default="false">
+  When `true`, the owner can only comment and cannot make other changes.
+</ParamField>
+
+<ParamField body="permission" type="string" default="private">
+  The visibility of the board. Accepted values: `"private"`, `"public"`.
+</ParamField>
+
+<ParamField body="color" type="string" default="belize">
+  The background color of the board. Accepted values: `belize`, `nephritis`, `pomegranate`, `pumpkin`, `wisteria`, `moderatepink`, `strongcyan`, `limegreen`, `midnight`, `dark`, `relax`, `corteza`, `clearblue`, `natural`, `modern`, `moderndark`, `exodark`, `cleandark`, `cleanlight`.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards \
+     -d '{"title":"Board title here","owner":"ABCDE12345","permission":"private","color":"nephritis"}'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created board.
+</ResponseField>
+
+```json
+{
+  "_id": "YRgy7Ku6uLFv2pYwZ"
+}
+```
+
+---
+
+## Get a board
+
+Retrieve details about a specific board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique board identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The board title.
+</ResponseField>
+
+<ResponseField name="slug" type="string">
+  URL-friendly version of the board title.
+</ResponseField>
+
+<ResponseField name="archived" type="boolean">
+  Whether the board is archived.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the board was created.
+</ResponseField>
+
+<ResponseField name="modifiedAt" type="string">
+  ISO 8601 timestamp of the last modification.
+</ResponseField>
+
+<ResponseField name="permission" type="string">
+  Board visibility — `"private"` or `"public"`.
+</ResponseField>
+
+<ResponseField name="color" type="string">
+  The board color identifier.
+</ResponseField>
+
+<ResponseField name="members" type="array">
+  <Expandable title="properties">
+    <ResponseField name="userId" type="string">
+      The member's user ID.
+    </ResponseField>
+    <ResponseField name="isAdmin" type="boolean">
+      Whether the member has admin privileges on this board.
+    </ResponseField>
+    <ResponseField name="isActive" type="boolean">
+      Whether the member is active.
+    </ResponseField>
+    <ResponseField name="isNoComments" type="boolean">
+      Whether the member is restricted from commenting.
+    </ResponseField>
+    <ResponseField name="isCommentOnly" type="boolean">
+      Whether the member can only comment.
+    </ResponseField>
+    <ResponseField name="isWorker" type="boolean">
+      Whether the member has worker-level permissions.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Delete a board
+
+Permanently delete a board.
+
+| Method   | Endpoint |
+| -------- | -------- |
+| `DELETE` | `/api/boards/:boardId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board to delete.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -X DELETE \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the deleted board.
+</ResponseField>
+
+```json
+{
+  "_id": "YRgy7Ku6uLFv2pYwZ"
+}
+```
+
+---
+
+## Get board members
+
+Retrieve all members of a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/members` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/members
+```
+
+---
+
+## Add a board member
+
+Add a user to a board with a specified role. The `action` field controls the operation. You can also use this endpoint to change an existing member's role.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/members/:memberId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  The user ID of the member to add.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  Use `"add"` to add a new member, or omit to update an existing member's role.
+</ParamField>
+
+<ParamField body="isAdmin" type="boolean" default="false">
+  Grant admin privileges on this board.
+</ParamField>
+
+<ParamField body="isNoComments" type="boolean" default="false">
+  Restrict the member from commenting.
+</ParamField>
+
+<ParamField body="isCommentOnly" type="boolean" default="false">
+  Restrict the member to comment-only access.
+</ParamField>
+
+<ParamField body="isWorker" type="boolean" default="false">
+  Grant worker-level access. Workers can move cards, assign themselves, and comment, but cannot change settings or create/delete cards.
+</ParamField>
+
+**Add member with normal role:**
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/members/ztKvBTzCqmyJ77on8/add \
+     -d '{"action": "add", "isAdmin": "false", "isNoComments": "false", "isCommentOnly": "false", "isWorker": "false"}'
+```
+
+**Change member role to admin:**
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/members/ztKvBTzCqmyJ77on8 \
+     -d '{"isAdmin": "true", "isNoComments": "false", "isCommentOnly": "false", "isWorker": "false"}'
+```
+
+**Change member role to comment-only:**
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/members/ztKvBTzCqmyJ77on8 \
+     -d '{"isAdmin": "false", "isNoComments": "false", "isCommentOnly": "true", "isWorker": "false"}'
+```
+
+---
+
+## Remove a board member
+
+Remove a user from a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/members/:memberId/remove` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="memberId" type="string" required>
+  The user ID of the member to remove.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  Must be `"remove"`.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/members/ztKvBTzCqmyJ77on8/remove \
+     -d '{"action": "remove"}'
+```
+
+---
+
+## Take ownership of all boards
+
+Allows an admin to take ownership of all boards belonging to a given user — including archived boards where that user was an admin.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `PUT`  | `/api/users/:id` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="id" type="string" required>
+  The user ID whose boards will be transferred to the calling admin.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  Must be `"takeOwnership"`.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/users/ztKvBTzCqmyJ77on8 \
+     -d '{ "action": "takeOwnership" }'
+```
+
+<Warning>
+  This action is irreversible. All boards where the target user was an admin will be transferred to the authenticated admin making the request.
+</Warning>

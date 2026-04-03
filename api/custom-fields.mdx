@@ -1,0 +1,290 @@
+---
+title: "Custom Fields API"
+description: "Manage custom fields on boards and cards via the REST API"
+---
+
+<Note>
+  All endpoints require a Bearer token in the `Authorization` header. Custom fields are defined at the board level and can be attached to cards on that board. The custom field `_id` is shared between the board-level definition and its value on each card.
+</Note>
+
+## Custom field types
+
+Wekan supports the following custom field types:
+
+| Type | Description |
+| ---- | ----------- |
+| `text` | Free-form text input |
+| `number` | Numeric value |
+| `date` | Date picker |
+| `dropdown` | Selection from a predefined list of items |
+| `checkbox` | Boolean toggle |
+| `currency` | Monetary value with currency code |
+| `stringtemplate` | Generated string based on a template format |
+
+---
+
+## List custom fields for a board
+
+Retrieve all custom fields defined on a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/custom-fields` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board whose custom fields you want to list.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/custom-fields
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique custom field identifier.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The display name of the custom field.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The field type — one of `text`, `number`, `date`, `dropdown`, `checkbox`, `currency`, `stringtemplate`.
+</ResponseField>
+
+<ResponseField name="boardIds" type="array">
+  Array of board IDs this custom field is associated with.
+</ResponseField>
+
+<ResponseField name="settings" type="object">
+  <Expandable title="properties">
+    <ResponseField name="currencyCode" type="string">
+      ISO 4217 currency code. Only applies when `type` is `currency`.
+    </ResponseField>
+    <ResponseField name="dropdownItems" type="array">
+      List of selectable options. Only applies when `type` is `dropdown`.
+      <Expandable title="properties">
+        <ResponseField name="_id" type="string">
+          Unique identifier for the dropdown item.
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Display name of the dropdown item.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="stringtemplateFormat" type="string">
+      Template format string. Only applies when `type` is `stringtemplate`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="showOnCard" type="boolean">
+  Whether the field value is shown on the card in board view.
+</ResponseField>
+
+```json
+[
+  {
+    "_id": "oZHkpcaxDHnbkbqGo",
+    "name": "Story Points",
+    "type": "number",
+    "boardIds": ["YRgy7Ku6uLFv2pYwZ"],
+    "settings": {},
+    "showOnCard": true
+  }
+]
+```
+
+---
+
+## Create a custom field
+
+Define a new custom field on a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/custom-fields` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board to add the custom field to.
+</ParamField>
+
+### Request parameters
+
+<ParamField body="name" type="string" required>
+  The display name of the custom field.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  The field type. Accepted values: `text`, `number`, `date`, `dropdown`, `checkbox`, `currency`, `stringtemplate`.
+</ParamField>
+
+<ParamField body="showOnCard" type="boolean">
+  When `true`, the field value is displayed on the card in the board view. Defaults to `false`.
+</ParamField>
+
+<ParamField body="automaticallyOnCard" type="boolean">
+  When `true`, this field is automatically shown on all new cards created on the board.
+</ParamField>
+
+<ParamField body="settings" type="object">
+  Type-specific settings.
+  <Expandable title="properties">
+    <ResponseField name="currencyCode" type="string">
+      ISO 4217 currency code (e.g. `"USD"`, `"EUR"`). Required when `type` is `currency`.
+    </ResponseField>
+    <ResponseField name="dropdownItems" type="array">
+      Array of `{ "_id": string, "name": string }` objects defining the selectable options. Required when `type` is `dropdown`.
+    </ResponseField>
+    <ResponseField name="stringtemplateFormat" type="string">
+      Template format string. Required when `type` is `stringtemplate`.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+**Create a text field:**
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/custom-fields \
+     -d '{ "name": "External Link", "type": "text", "showOnCard": false, "settings": {} }'
+```
+
+**Create a dropdown field:**
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/custom-fields \
+     -d '{
+       "name": "Priority",
+       "type": "dropdown",
+       "showOnCard": true,
+       "settings": {
+         "dropdownItems": [
+           { "_id": "low", "name": "Low" },
+           { "_id": "medium", "name": "Medium" },
+           { "_id": "high", "name": "High" }
+         ]
+       }
+     }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created custom field.
+</ResponseField>
+
+```json
+{
+  "_id": "oZHkpcaxDHnbkbqGo"
+}
+```
+
+---
+
+## Get a custom field
+
+Retrieve details about a specific custom field on a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/custom-fields/:customFieldId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="customFieldId" type="string" required>
+  The ID of the custom field to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/custom-fields/oZHkpcaxDHnbkbqGo
+```
+
+### Response
+
+```json
+{
+  "_id": "oZHkpcaxDHnbkbqGo",
+  "name": "Story Points",
+  "type": "number",
+  "boardIds": ["YRgy7Ku6uLFv2pYwZ"],
+  "settings": {},
+  "showOnCard": true
+}
+```
+
+---
+
+## Delete a custom field
+
+Permanently remove a custom field from a board.
+
+| Method   | Endpoint |
+| -------- | -------- |
+| `DELETE` | `/api/boards/:boardId/custom-fields/:customFieldId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="customFieldId" type="string" required>
+  The ID of the custom field to delete.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -X DELETE \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/custom-fields/oZHkpcaxDHnbkbqGo
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the deleted custom field.
+</ResponseField>
+
+```json
+{
+  "_id": "oZHkpcaxDHnbkbqGo"
+}
+```
+
+<Warning>
+  Deleting a custom field removes it from the board definition. Any values previously stored for this field on cards will no longer be accessible.
+</Warning>
+
+---
+
+## Writing custom field values to cards
+
+To set a custom field value on a card, use `PUT /api/boards/:boardId/lists/:listId/cards/:cardId` with the `customFields` array. The `_id` in the array must match the custom field's `_id` from the board definition.
+
+<Note>
+  The `Content-Type` header must be `application/json` and the `customFields` value must be an array, even when setting a single field.
+</Note>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards/ssrNX9CvXvPxuC5DE \
+     -d '{ "customFields": [ { "_id": "oZHkpcaxDHnbkbqGo", "value": "foobar" } ] }'
+```

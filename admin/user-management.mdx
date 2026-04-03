@@ -1,0 +1,205 @@
+---
+title: "User Management"
+description: "Manage users, roles, and permissions in WeKan"
+---
+
+## Accessing the Admin Panel
+
+Click your avatar in the top-right corner of any WeKan page and select **Admin Panel**. This area is only visible to users with the admin role.
+
+<Note>
+  Only users with the `isAdmin` flag set to `true` can access the Admin Panel. The first registered user on a new WeKan instance is automatically an admin.
+</Note>
+
+---
+
+## User roles
+
+WeKan has two levels of roles: a global admin role and per-board permission levels.
+
+### Global roles
+
+| Role | Description |
+|------|-------------|
+| **Admin** | Full access to the Admin Panel, all boards, and all user management features |
+| **Normal user** | Can create boards, manage their own content, and be invited to boards |
+
+### Board-level permissions
+
+When adding a member to a board, you assign one of the following permission levels:
+
+| Permission | Can view | Can comment | Can edit cards | Can admin board |
+|------------|----------|-------------|----------------|-----------------|
+| **Board admin** | Yes | Yes | Yes | Yes |
+| **Normal member** | Yes | Yes | Yes | No |
+| **Comment only** | Yes | Yes | No | No |
+| **No comments** | Yes | No | No | No |
+| **Worker** | Yes | Yes | Limited | No |
+| **Read only** | Yes | No | No | No |
+
+---
+
+## Inviting users
+
+WeKan supports two registration models: open registration and invitation-only.
+
+### Disabling open registration
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Go to Settings">
+    Select **Settings** in the left sidebar.
+  </Step>
+  <Step title="Disable registration">
+    Toggle **Disable Registration** to on. New visitors will not be able to sign up without an invitation code.
+  </Step>
+</Steps>
+
+### Generating invitation codes
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Go to Invite Codes">
+    Select **Invite Codes** in the left sidebar.
+  </Step>
+  <Step title="Create a new code">
+    Click **Add Invite Code**, set an expiry and usage limit, then share the generated code with the person you want to invite.
+  </Step>
+</Steps>
+
+<Tip>
+  Set a short expiry on invitation codes and a usage limit of 1 for one-time invitations. This limits exposure if a code is forwarded.
+</Tip>
+
+---
+
+## Enabling and disabling user accounts
+
+You can prevent a user from logging in without deleting their account.
+
+<Steps>
+  <Step title="Find the user">
+    Go to **Admin Panel** → **People** and search for the user by name or email.
+  </Step>
+  <Step title="Disable the account">
+    Click the user row to open their profile, then toggle **Disable Login**. The user will be unable to authenticate immediately.
+  </Step>
+  <Step title="Re-enable the account">
+    Return to the same profile and toggle **Disable Login** off to restore access.
+  </Step>
+</Steps>
+
+<Note>
+  Disabling a user account does not remove them from boards or delete their content. Their cards and comments remain intact.
+</Note>
+
+---
+
+## Managing board membership
+
+### Adding a member to a board
+
+<Steps>
+  <Step title="Open the board">
+    Navigate to the board where you want to add a member.
+  </Step>
+  <Step title="Open Board Settings">
+    Click the **⋮** or sidebar icon to open Board Settings.
+  </Step>
+  <Step title="Add member">
+    Under **Members**, type the username or email address and select the user from the dropdown.
+  </Step>
+  <Step title="Set permission level">
+    Choose the appropriate permission level (Normal member, Comment only, No comments, etc.).
+  </Step>
+</Steps>
+
+### Removing a member from a board
+
+Open **Board Settings** → **Members**, then click the remove icon next to the member you want to remove.
+
+### Changing a member's permission on a board
+
+Open **Board Settings** → **Members**, click the permission label next to the member's name, and select a new level from the dropdown.
+
+---
+
+## Account lockout settings
+
+WeKan includes brute force protection that locks accounts after repeated failed login attempts. You can configure this in the Admin Panel.
+
+### Viewing and changing lockout settings
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Go to People → Locked Users">
+    Select **People** in the sidebar, then click the **Locked Users** tab.
+  </Step>
+  <Step title="Adjust settings">
+    Configure the following for both known users (registered accounts) and unknown users (unrecognized usernames):
+
+    - **Failures before lockout** — number of failed attempts before locking (default: 3)
+    - **Lockout period** — seconds the account stays locked (default: 60)
+    - **Failure window** — time window in seconds during which failures are counted (default: 15)
+  </Step>
+</Steps>
+
+### Unlocking a user
+
+- **Individual unlock**: In the **Locked Users** list, click the red lock icon next to the user.
+- **Unlock all**: Click the **Unlock All** button to release all currently locked accounts at once.
+
+<Tip>
+  Regularly review the Locked Users list to spot patterns of repeated failed attempts, which may indicate a brute force attack targeting specific accounts.
+</Tip>
+
+---
+
+## Impersonating users
+
+Admins can log in as another user to troubleshoot issues without knowing their password.
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Find the user">
+    Go to **People** and click the target user's name.
+  </Step>
+  <Step title="Start impersonation">
+    Click **Login as this user**. You will be logged in as that user in the same session.
+  </Step>
+  <Step title="End impersonation">
+    To return to your admin account, log out and log back in with your own credentials.
+  </Step>
+</Steps>
+
+<Warning>
+  Impersonation gives you full access to the user's boards and data. Use it only when necessary and inform users in accordance with your organization's privacy policy.
+</Warning>
+
+---
+
+## Deleting users
+
+<Warning>
+  Deleting a user is permanent. Their account is removed but their cards, comments, and board activity remain attributed to their former username.
+</Warning>
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Find the user">
+    Go to **People** and click the user you want to delete.
+  </Step>
+  <Step title="Delete the account">
+    Click **Delete User** and confirm the action. The user will no longer be able to log in and their account entry is removed from the system.
+  </Step>
+</Steps>

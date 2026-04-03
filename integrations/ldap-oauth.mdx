@@ -1,0 +1,429 @@
+---
+title: "LDAP, OAuth2, and SAML"
+description: "Integrate WeKan with your identity provider"
+---
+
+WeKan supports several external authentication methods so you can let users sign in with existing corporate credentials instead of a separate WeKan password. The methods available depend on your installation type (Snap, Docker, or source).
+
+| Method | Status | Notes |
+|--------|--------|-------|
+| LDAP / Active Directory | Supported | Snap and Docker |
+| OAuth2 (generic) | Supported | Snap and Docker |
+| OAuth2 — Rocket.Chat | Supported | Snap and Docker |
+| OAuth2 — GitLab | Supported | Snap and Docker |
+| OAuth2 — Auth0 | Supported | Snap and Docker |
+| OAuth2 — LemonLDAP::NG | Supported | Snap and Docker |
+| SAML | Partial | Code present; may require fixes |
+| Header-based login | Supported | Reverse-proxy SSO |
+
+## LDAP
+
+LDAP (Lightweight Directory Access Protocol) lets users authenticate against an existing directory service such as Active Directory, OpenLDAP, or FreeIPA.
+
+### How it works
+
+When a user logs in, WeKan queries your LDAP server using the configured bind credentials, looks up the user by the search field (`sAMAccountName`, `uid`, etc.), verifies the password, and creates or updates the local WeKan account.
+
+<Tabs>
+  <Tab title="Docker">
+    Add these environment variables to your `docker-compose.yml` under the `wekan` service. Only the settings you need to change from the defaults are required.
+
+    ```yaml
+    environment:
+      - LDAP_ENABLE=true
+      - LDAP_HOST=ldap.yourcompany.com
+      - LDAP_PORT=389
+      - LDAP_BASEDN=ou=users,dc=yourcompany,dc=com
+      - LDAP_AUTHENTIFICATION=true
+      - LDAP_AUTHENTIFICATION_USERDN=cn=wekan_svc,ou=serviceaccounts,dc=yourcompany,dc=com
+      - LDAP_AUTHENTIFICATION_PASSWORD=yourservicepassword
+      - LDAP_USER_SEARCH_FIELD=sAMAccountName
+      - LDAP_USERNAME_FIELD=sAMAccountName
+      - LDAP_FULLNAME_FIELD=cn
+      - LDAP_EMAIL_FIELD=mail
+      - LDAP_ENCRYPTION=false
+      - LDAP_LOGIN_FALLBACK=false
+      - LDAP_RECONNECT=true
+      - LDAP_TIMEOUT=10000
+      - LDAP_IDLE_TIMEOUT=10000
+      - LDAP_CONNECT_TIMEOUT=10000
+      - LDAP_BACKGROUND_SYNC=true
+      - LDAP_BACKGROUND_SYNC_INTERVAL=every 1 hours
+      - LDAP_BACKGROUND_SYNC_KEEP_EXISTANT_USERS_UPDATED=true
+      - LDAP_BACKGROUND_SYNC_IMPORT_NEW_USERS=true
+    ```
+
+    <Tip>
+      Set `LDAP_LOGIN_FALLBACK=true` during initial setup so you can still log in with a local WeKan account if LDAP is misconfigured.
+    </Tip>
+  </Tab>
+
+  <Tab title="Snap">
+    Run these commands after installing the `wekan` Snap. List all available settings with:
+
+    ```bash
+    wekan.help | less
+    ```
+
+    **Active Directory example:**
+
+    ```bash
+    sudo snap set wekan ldap-enable='true'
+    sudo snap set wekan default-authentication-method='ldap'
+    sudo snap set wekan ldap-host='192.168.1.100'
+    sudo snap set wekan ldap-port='389'
+    sudo snap set wekan ldap-basedn='OU=Domain Users,DC=sub,DC=domain,DC=tld'
+    sudo snap set wekan ldap-authentication='true'
+    sudo snap set wekan ldap-authentication-userdn='CN=LDAP-User,OU=Service Accounts,DC=sub,DC=domain,DC=tld'
+    sudo snap set wekan ldap-authentication-password='yourpassword'
+    sudo snap set wekan ldap-user-search-field='sAMAccountName'
+    sudo snap set wekan ldap-username-field='sAMAccountName'
+    sudo snap set wekan ldap-fullname-field='cn'
+    sudo snap set wekan ldap-background-sync='true'
+    sudo snap set wekan ldap-background-sync-interval='every 1 hours'
+    sudo snap set wekan ldap-background-sync-keep-existant-users-updated='true'
+    sudo snap set wekan ldap-background-sync-import-new-users='true'
+    sudo snap set wekan ldap-encryption='false'
+    sudo snap set wekan ldap-login-fallback='false'
+    sudo snap set wekan ldap-reconnect='true'
+    ```
+  </Tab>
+</Tabs>
+
+### Key settings reference
+
+| Setting | Description | Example |
+|---------|-------------|---------|
+| `LDAP_HOST` | FQDN or IP of your LDAP server | `ldap.example.com` |
+| `LDAP_PORT` | LDAP port | `389` (or `636` for LDAPS) |
+| `LDAP_BASEDN` | Where WeKan searches for users | `ou=users,dc=example,dc=com` |
+| `LDAP_USER_SEARCH_FILTER` | Extra LDAP filter (optional) | `(objectClass=user)` |
+| `LDAP_USER_SEARCH_FIELD` | Attribute matched against the login name | `sAMAccountName` or `uid` |
+| `LDAP_USER_SEARCH_SCOPE` | Search depth: `base`, `one`, or `sub` | `sub` |
+| `LDAP_ENCRYPTION` | `false`, `tls` (STARTTLS), or `ssl` (LDAPS) | `tls` |
+| `LDAP_REJECT_UNAUTHORIZED` | Reject self-signed TLS certs | `false` for self-signed CAs |
+| `LDAP_MERGE_EXISTING_USERS` | Merge LDAP accounts with existing WeKan accounts | `true` |
+| `LDAP_SYNC_USER_DATA_FIELDMAP` | Map LDAP attributes to WeKan fields | `{"displayName":"name","mail":"email"}` |
+
+### Active Directory simple auth
+
+If your AD setup uses simple bind (user logs in with their own DN rather than a service account), enable AD Simple Auth:
+
+<Tabs>
+  <Tab title="Docker">
+    ```yaml
+    - LDAP_AD_SIMPLE_AUTH=true
+    - LDAP_USER_AUTHENTICATION=true
+    - LDAP_DEFAULT_DOMAIN=yourcompany.com
+    ```
+  </Tab>
+  <Tab title="Snap">
+    ```bash
+    sudo snap set wekan ldap-ad-simple-auth='true'
+    sudo snap set wekan ldap-user-authentication='true'
+    sudo snap set wekan ldap-default-domain='yourcompany.com'
+    ```
+
+    To disable:
+    ```bash
+    sudo snap unset wekan ldap-ad-simple-auth
+    sudo snap unset wekan ldap-user-authentication
+    sudo snap unset wekan ldap-default-domain
+    ```
+  </Tab>
+</Tabs>
+
+When AD Simple Auth is enabled, `LDAP_BASEDN` is not required. WeKan appends `LDAP_DEFAULT_DOMAIN` to the username to construct the bind DN.
+
+### FreeIPA example
+
+```bash
+snap set wekan ldap-enable='true'
+snap set wekan ldap-host='ldap.example.com'
+snap set wekan ldap-port='389'
+snap set wekan ldap-encryption='tls'
+snap set wekan ldap-authentication='true'
+snap set wekan ldap-authentication-userdn='uid=ldapuser,cn=users,cn=accounts,dc=example,dc=com'
+snap set wekan ldap-authentication-password='password'
+snap set wekan ldap-reject-unauthorized='false'
+snap set wekan ldap-basedn='dc=example,dc=com'
+snap set wekan ldap-user-search-field='uid'
+snap set wekan ldap-user-search-filter='(&(objectclass=person))'
+snap set wekan ldap-user-search-scope='sub'
+snap set wekan ldap-username-field='uid'
+snap set wekan ldap-fullname-field='displayName'
+snap set wekan ldap-email-field='mail'
+snap set wekan ldap-sync-user-data='true'
+snap set wekan ldap-sync-user-data-fieldmap='{"displayName":"name","mail":"email","initials":"initials"}'
+snap set wekan ldap-background-sync='true'
+snap set wekan ldap-background-sync-interval='every 1 hours'
+snap set wekan ldap-merge-existing-users='true'
+```
+
+### Background sync
+
+Enable background sync to automatically import new LDAP users and keep existing WeKan accounts updated:
+
+```bash
+# Docker
+LDAP_BACKGROUND_SYNC=true
+LDAP_BACKGROUND_SYNC_INTERVAL=every 1 hours
+LDAP_BACKGROUND_SYNC_IMPORT_NEW_USERS=true
+LDAP_BACKGROUND_SYNC_KEEP_EXISTANT_USERS_UPDATED=true
+```
+
+The interval format follows the [later.js text parser](https://bunkat.github.io/later/parsers.html#text). Leave `LDAP_BACKGROUND_SYNC_INTERVAL` unset to use the default (avoids a known crash on some configurations).
+
+A community-maintained [ldap-sync.py](https://github.com/wekan/wekan/blob/main/docs/Login/ldap-sync/ldap-sync.py) script is also available for more control, including correct removal of users who have been deleted from the directory.
+
+---
+
+## OAuth2
+
+OAuth2 lets users authenticate through a third-party identity provider. WeKan acts as an OAuth2 client. When a user clicks **Sign in with Oidc**, they are redirected to the provider, authenticate there, and are returned to WeKan with a session.
+
+The OAuth2 redirect URI for WeKan is always:
+
+```
+https://YOUR_WEKAN_URL/_oauth/oidc
+```
+
+<Tabs>
+  <Tab title="GitLab">
+    In GitLab, go to **Admin Area → Applications → New Application**. Set the redirect URI to `https://wekan.example.com/_oauth/oidc` and enable the `openid`, `profile`, and `email` scopes.
+
+    Then configure WeKan (Snap example):
+
+    ```bash
+    sudo snap set wekan oauth2-enabled='true'
+    sudo snap set wekan oauth2-client-id='YOUR_CLIENT_ID'
+    sudo snap set wekan oauth2-secret='YOUR_CLIENT_SECRET'
+    sudo snap set wekan oauth2-server-url='https://gitlab.example.com/'
+    sudo snap set wekan oauth2-auth-endpoint='oauth/authorize'
+    sudo snap set wekan oauth2-userinfo-endpoint='oauth/userinfo'
+    sudo snap set wekan oauth2-token-endpoint='oauth/token'
+    sudo snap set wekan oauth2-id-map='sub'
+    sudo snap set wekan oauth2-username-map='nickname'
+    sudo snap set wekan oauth2-fullname-map='name'
+    sudo snap set wekan oauth2-email-map='email'
+    sudo snap set wekan oauth2-request-permissions='openid profile email'
+    ```
+  </Tab>
+
+  <Tab title="Rocket.Chat">
+    Rocket.Chat can serve as an OAuth2 provider so WeKan users log in with their Rocket.Chat accounts. If Rocket.Chat itself uses LDAP, SAML, or Google auth, those same users can then access WeKan.
+
+    **In Rocket.Chat** (Administration → Integrations → OAuth Apps → New Application):
+
+    ```
+    Active: true
+    Application Name: WeKan
+    Redirect URI: https://boards.yourcompany.com/_oauth/oidc
+    ```
+
+    Copy the generated **Client ID** and **Client Secret**.
+
+    **In WeKan** (Snap example):
+
+    ```bash
+    sudo snap set wekan oauth2-enabled='true'
+    sudo snap set wekan oauth2-client-id='YOUR_CLIENT_ID'
+    sudo snap set wekan oauth2-secret='YOUR_CLIENT_SECRET'
+    sudo snap set wekan oauth2-server-url='https://chat.yourcompany.com/'
+    sudo snap set wekan oauth2-auth-endpoint='oauth/authorize'
+    sudo snap set wekan oauth2-userinfo-endpoint='oauth/userinfo'
+    sudo snap set wekan oauth2-token-endpoint='oauth/token'
+    sudo snap set wekan oauth2-id-map='preferred_username'
+    sudo snap set wekan oauth2-username-map='preferred_username'
+    sudo snap set wekan oauth2-fullname-map='preferred_username'
+    sudo snap set wekan oauth2-email-map='email'
+    ```
+
+    <Note>
+      If OAuth2 login is not working, enable debug mode with `sudo snap set wekan debug='true'`, click the Oidc button, and check logs with `sudo snap logs wekan.wekan`.
+    </Note>
+  </Tab>
+
+  <Tab title="Auth0">
+    Auth0 supports passwordless email, Google, Facebook, LinkedIn, and other login methods. This makes it a flexible identity hub for WeKan.
+
+    **In Auth0** (Applications → New → Regular Web Application):
+
+    ```
+    Application Type: Single Page Application
+    Token Endpoint Authentication Method: Post
+    Allowed Callback URLs: https://boards.yourcompany.com/_oauth/oidc
+    Allowed Web Origins: https://boards.yourcompany.com
+    ```
+
+    Add a Rule to enrich the ID token:
+
+    ```javascript
+    function (user, context, callback) {
+      if (context.clientName !== 'YOUR_APP_NAME') {
+        return callback(null, user, context);
+      }
+      var ns = "https://boards.yourcompany.com/";
+      context.idToken[ns + "id"]      = user.user_id;
+      context.idToken[ns + "email"]   = user.email;
+      context.idToken[ns + "name"]    = user.name || user.user_metadata.name;
+      context.idToken[ns + "picture"] = user.picture;
+      callback(null, user, context);
+    }
+    ```
+
+    **In WeKan** (Snap example):
+
+    ```bash
+    sudo snap set wekan oauth2-client-id='YOUR_CLIENT_ID'
+    sudo snap set wekan oauth2-secret='YOUR_SECRET'
+    sudo snap set wekan oauth2-server-url='https://YOURACCOUNT.eu.auth0.com'
+    sudo snap set wekan oauth2-auth-endpoint='/authorize'
+    sudo snap set wekan oauth2-userinfo-endpoint='/userinfo'
+    sudo snap set wekan oauth2-token-endpoint='/oauth/token'
+    sudo snap set wekan oauth2-id-map='https://boards.yourcompany.com/id'
+    sudo snap set wekan oauth2-username-map='https://boards.yourcompany.com/email'
+    sudo snap set wekan oauth2-fullname-map='https://boards.yourcompany.com/name'
+    sudo snap set wekan oauth2-email-map='https://boards.yourcompany.com/email'
+    ```
+  </Tab>
+
+  <Tab title="LemonLDAP::NG">
+    LemonLDAP::NG is an open-source WebSSO solution. Official WeKan integration documentation is available at [lemonldap-ng.org](https://lemonldap-ng.org/documentation/latest/applications/wekan).
+
+    **WeKan environment variables** (Docker):
+
+    ```yaml
+    - OAUTH2_ENABLED=true
+    - OAUTH2_CLIENT_ID=ClientID
+    - OAUTH2_SECRET=Secret
+    - OAUTH2_SERVER_URL=https://auth.example.com/
+    - OAUTH2_AUTH_ENDPOINT=oauth2/authorize
+    - OAUTH2_USERINFO_ENDPOINT=oauth2/userinfo
+    - OAUTH2_TOKEN_ENDPOINT=oauth2/token
+    - OAUTH2_ID_MAP=sub
+    ```
+
+    **In LemonLDAP::NG**, create a new OpenID Connect Relay Party with:
+    - Client ID matching `OAUTH2_CLIENT_ID`
+    - Client Secret matching `OAUTH2_SECRET`
+    - Exported attributes for `name` and `email`
+  </Tab>
+
+  <Tab title="Generic OAuth2">
+    For any OAuth2/OIDC-compliant provider, set these environment variables (Docker):
+
+    ```yaml
+    - OAUTH2_ENABLED=true
+    - OAUTH2_CLIENT_ID=your-client-id
+    - OAUTH2_SECRET=your-client-secret
+    - OAUTH2_SERVER_URL=https://idp.example.com/
+    - OAUTH2_AUTH_ENDPOINT=oauth2/authorize
+    - OAUTH2_USERINFO_ENDPOINT=oauth2/userinfo
+    - OAUTH2_TOKEN_ENDPOINT=oauth2/token
+    - OAUTH2_ID_MAP=sub
+    - OAUTH2_USERNAME_MAP=preferred_username
+    - OAUTH2_FULLNAME_MAP=name
+    - OAUTH2_EMAIL_MAP=email
+    - OAUTH2_REQUEST_PERMISSIONS=openid profile email
+    ```
+
+    Adjust the endpoint paths and field map values to match your provider's OIDC discovery document.
+  </Tab>
+</Tabs>
+
+### Autologin with OAuth2
+
+WeKan supports automatic redirect to the OAuth2 provider on page load, so users never see the WeKan login form. This feature was added in [PR #4588](https://github.com/wekan/wekan/pull/4588). Consult your installation's environment variable list for the `AUTOLOGIN_WITH_OIDC` or equivalent setting.
+
+---
+
+## SAML
+
+<Warning>
+SAML support in WeKan is partial. The code is present (`wekan/packages/meteor-accounts-saml`) but may require patches for your IdP. Test thoroughly before deploying to production.
+</Warning>
+
+WeKan includes SAML code based on [meteor-accounts-saml](https://github.com/steffow/meteor-accounts-saml). The Sandstorm edition of WeKan has working SAML login. For source/Docker/Snap installs:
+
+- Server-side code: `wekan/server/authentication.js` (bottom section) and `wekan/packages/meteor-accounts-saml/`
+- Client-side code: `wekan/client/components/main/layouts.*`
+
+SAML configuration is done via environment variables on your deployment. Refer to the [SAML issue tracker](https://github.com/wekan/wekan/issues/708) and [settings commit](https://github.com/wekan/wekan/commit/214c86cc22f4c721a79ec0a4a4f3bbd90d673f93) for the current state and known issues.
+
+If you need SAML urgently, consider routing it through an OAuth2 provider that already has a working SAML bridge (e.g., Auth0, Keycloak, or LemonLDAP::NG).
+
+---
+
+## Header-based login (reverse-proxy SSO)
+
+If your reverse proxy (Nginx, Apache, Caddy, Traefik) handles authentication and injects user identity as HTTP headers, WeKan can read those headers and log the user in automatically. This is useful when WeKan sits behind a corporate SSO proxy.
+
+Check the `HEADER_LOGIN_*` environment variables in your WeKan installation's configuration reference, and ensure your proxy strips any user-supplied versions of those headers before forwarding requests.
+
+---
+
+## Disabling password login
+
+Once SSO is working correctly, you may want to prevent users from creating accounts or logging in with a username and password:
+
+<Tabs>
+  <Tab title="Snap">
+    ```bash
+    sudo snap set wekan password-login-enabled='false'
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```yaml
+    - PASSWORD_LOGIN_ENABLED=false
+    ```
+  </Tab>
+  <Tab title="Linux on-premise">
+    ```bash
+    export PASSWORD_LOGIN_ENABLED=false
+    ```
+  </Tab>
+  <Tab title="Windows on-premise">
+    ```bat
+    SET PASSWORD_LOGIN_ENABLED=false
+    ```
+  </Tab>
+</Tabs>
+
+With this set, the login form shows only the SSO button (OAuth2, LDAP, etc.) and hides the username/password fields.
+
+<Warning>
+Disable password login only after verifying that SSO works end-to-end, including for admin accounts. Lock yourself out and you will need direct database access to recover.
+</Warning>
+
+---
+
+<AccordionGroup>
+  <Accordion title="Troubleshooting: LDAP login fails with no error">
+    - Enable LDAP logging: `LDAP_LOG_ENABLED=true` and check your WeKan server logs.
+    - Confirm the bind DN and password are correct by testing them with `ldapsearch` from the same server:
+      ```bash
+      ldapsearch -H ldap://your-ldap-host:389 \
+        -D "cn=wekan_svc,ou=serviceaccounts,dc=example,dc=com" \
+        -w yourpassword \
+        -b "ou=users,dc=example,dc=com" "(uid=testuser)"
+      ```
+    - Check that `LDAP_USER_SEARCH_FIELD` matches the attribute your users log in with (`uid` for OpenLDAP, `sAMAccountName` for AD).
+    - Enable `LDAP_LOGIN_FALLBACK=true` temporarily to rule out LDAP as the issue by logging in with a local account.
+  </Accordion>
+  <Accordion title="Troubleshooting: OAuth2 login button does not appear">
+    - Confirm `OAUTH2_ENABLED=true` (Docker) or `oauth2-enabled='true'` (Snap) is set and WeKan has been restarted after the change.
+    - Check that the redirect URI registered with your provider exactly matches `https://your-wekan-url/_oauth/oidc` — trailing slashes and HTTP vs HTTPS matter.
+  </Accordion>
+  <Accordion title="Troubleshooting: OAuth2 redirect returns an error from the provider">
+    - Verify the client ID and secret match what your provider shows.
+    - Confirm the requested scopes (`openid profile email`) are enabled for your application in the provider's dashboard.
+    - Enable debug logging: `sudo snap set wekan debug='true'` and review `sudo snap logs wekan.wekan`.
+  </Accordion>
+  <Accordion title="Troubleshooting: user profile name is wrong after OAuth2 login">
+    WeKan maps provider fields to local profile fields using the `*_MAP` settings (e.g. `OAUTH2_FULLNAME_MAP`). After first login, update the mapping and have the user log in again, or let the user edit their profile name manually under **Username → Profile**.
+  </Accordion>
+  <Accordion title="Troubleshooting: LDAP background sync removes wrong users">
+    Use the [ldap-sync.py](https://github.com/wekan/wekan/blob/main/docs/Login/ldap-sync/ldap-sync.py) script instead of the built-in background sync. It performs a more accurate comparison between LDAP and WeKan before removing accounts.
+  </Accordion>
+</AccordionGroup>

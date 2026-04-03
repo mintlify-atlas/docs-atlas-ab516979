@@ -1,0 +1,324 @@
+---
+title: "Backup and Restore"
+description: "Back up and restore your WeKan database"
+---
+
+## Why backups matter
+
+<Warning>
+  WeKan has **no undo feature**. If a user deletes a list or card, or if a bug corrupts data, the only way to recover is from a backup. If your disk fills up, MongoDB can become corrupted and unrecoverable without a recent dump.
+</Warning>
+
+Common data-loss scenarios:
+
+- A user accidentally deletes a list or board
+- A WeKan upgrade introduces a bug that corrupts records
+- The server runs out of disk space mid-write, corrupting MongoDB
+- A hard drive fails
+
+Back up your WeKan database at least once per day. Store backups in a separate location from your server.
+
+---
+
+## Backing up with Docker
+
+This procedure stops the WeKan application container, dumps the database from the MongoDB container, then restarts the application. The database container stays running throughout.
+
+<Steps>
+  <Step title="Stop the WeKan app container">
+    ```bash
+    docker stop wekan-app
+    ```
+  </Step>
+  <Step title="Remove any previous dump inside the container">
+    ```bash
+    docker exec wekan-db rm -rf /data/dump
+    ```
+  </Step>
+  <Step title="Run mongodump inside the database container">
+    ```bash
+    docker exec wekan-db mongodump -o /data/dump
+    ```
+  </Step>
+  <Step title="Copy the dump to the host">
+    ```bash
+    docker cp wekan-db:/data/dump .
+    ```
+  </Step>
+  <Step title="Start the WeKan app container">
+    ```bash
+    docker start wekan-app
+    ```
+  </Step>
+</Steps>
+
+Copy the `dump` directory to an off-server location (another server, cloud storage, etc.).
+
+<Note>
+  Do **not** run `docker compose down` as part of a backup procedure. That command can delete volumes and destroy your data.
+</Note>
+
+---
+
+## Restoring with Docker
+
+<Warning>
+  The `--drop` flag in `mongorestore` deletes existing collections before importing. Make sure the dump you are restoring is complete and valid before proceeding.
+</Warning>
+
+<Steps>
+  <Step title="Stop the WeKan app container">
+    ```bash
+    docker stop wekan-app
+    ```
+  </Step>
+  <Step title="Remove any previous dump inside the container">
+    ```bash
+    docker exec wekan-db rm -rf /data/dump
+    ```
+  </Step>
+  <Step title="Copy your backup dump into the container">
+    ```bash
+    docker cp dump wekan-db:/data/
+    ```
+  </Step>
+  <Step title="Restore the database">
+    ```bash
+    docker exec wekan-db mongorestore --drop --dir=/data/dump
+    ```
+  </Step>
+  <Step title="Start the WeKan app container">
+    ```bash
+    docker start wekan-app
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Backing up with Snap
+
+The WeKan Snap ships its own MongoDB instance running on port `27019`. You must use the `mongodump` binary from the Snap's bundle.
+
+<Steps>
+  <Step title="Stop the WeKan Snap service">
+    ```bash
+    sudo snap stop wekan.wekan
+    ```
+  </Step>
+  <Step title="Set library and binary paths">
+    ```bash
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/snap/wekan/current/lib/x86_64-linux-gnu
+    export PATH="/snap/wekan/current/bin:$PATH"
+    ```
+
+    On Arch Linux, use this path instead:
+    ```bash
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH-}:/var/lib/snapd/snap/wekan/current/lib/x86_64-linux-gnu
+    ```
+  </Step>
+  <Step title="Dump the database">
+    ```bash
+    mongodump --port 27019
+    ```
+
+    This creates a `dump/` directory in the current working directory.
+  </Step>
+  <Step title="Save Snap settings">
+    ```bash
+    sudo snap get wekan > snap-settings.sh
+    sudo chown $USER:$USER snap-settings.sh
+    ```
+
+    Edit this file so each line is a `sudo snap set wekan ...` command, then mark it executable:
+    ```bash
+    chmod +x snap-settings.sh
+    ```
+  </Step>
+  <Step title="Restart WeKan">
+    ```bash
+    sudo snap start wekan.wekan
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Restoring with Snap
+
+<Steps>
+  <Step title="Stop WeKan">
+    ```bash
+    sudo snap stop wekan.wekan
+    ```
+  </Step>
+  <Step title="Set library and binary paths">
+    ```bash
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/snap/wekan/current/lib/x86_64-linux-gnu
+    export PATH="$PATH:/snap/wekan/current/bin"
+    ```
+  </Step>
+  <Step title="Restore the database">
+    ```bash
+    mongorestore --drop --port 27019
+    ```
+  </Step>
+  <Step title="Start WeKan and re-apply settings">
+    ```bash
+    sudo snap start wekan.wekan
+    ./snap-settings.sh
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Backing up attachments and file storage
+
+WeKan stores uploaded file attachments separately from the MongoDB database. The location depends on your deployment and the `WRITABLE_PATH` setting.
+
+<CodeGroup>
+
+```bash Docker
+# Attachments are stored in the path set by WRITABLE_PATH (default: /data)
+# Back up the files subdirectory
+docker cp wekan-app:/data/files ./files-backup
+```
+
+```bash Snap
+# Attachments are stored at:
+sudo cp -pR /var/snap/wekan/common/files /path/to/backup/files
+```
+
+</CodeGroup>
+
+<Tip>
+  Back up attachments at the same time as your MongoDB dump so the file references in the database match the files on disk.
+</Tip>
+
+---
+
+## Scheduled daily backups
+
+The following script, run as root via cron, backs up the WeKan Snap database to a timestamped `.tar.gz` archive.
+
+```bash
+#!/bin/bash
+# /root/backup-wekan.sh
+
+export LC_ALL=C
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/snap/wekan/current/lib/x86_64-linux-gnu
+
+version=$(snap list | grep wekan | awk -F ' ' '{print $3}')
+now=$(date +'%Y-%m-%d_%H.%M.%S')
+backupdir="/root/backups/wekan"
+
+mkdir -p "$backupdir/$version-$now"
+cd "$backupdir/$version-$now"
+
+snap get wekan > snap-settings.txt
+mongodump --port 27019
+
+cd ..
+tar -zcvf "$version-$now.tar.gz" "$version-$now"
+rm -rf "$version-$now"
+
+echo "Backup complete: $backupdir/$version-$now.tar.gz"
+```
+
+Schedule it with cron to run daily at 04:00:
+
+```bash
+sudo crontab -e
+```
+
+Add the following line:
+
+```
+0 4 * * * /root/backup-wekan.sh >> /root/backup.log.txt 2>&1
+```
+
+<Note>
+  Make the script executable before scheduling it: `chmod +x /root/backup-wekan.sh`
+</Note>
+
+---
+
+## Docker volume backup strategy
+
+For Docker deployments, you can also back up the MongoDB data volume directly.
+
+```bash
+# Find the volume name
+docker volume ls | grep wekan
+
+# Back up the volume to a tar archive (WeKan app must be stopped first)
+docker stop wekan-app
+docker run --rm \
+  -v wekan_wekan-db:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/wekan-db-$(date +%Y%m%d).tar.gz /data
+docker start wekan-app
+```
+
+---
+
+## Testing restores
+
+<Warning>
+  A backup you have never restored is an untested backup. Verify your restore procedure on a non-production system before you need it in an emergency.
+</Warning>
+
+<Steps>
+  <Step title="Set up a test instance">
+    Spin up a second WeKan instance (local Docker or VM) using the same version as production.
+  </Step>
+  <Step title="Restore the backup">
+    Follow the restore steps above on the test instance.
+  </Step>
+  <Step title="Verify data">
+    Log in and confirm that boards, lists, cards, and attachments are present and accessible.
+  </Step>
+  <Step title="Schedule regular restore tests">
+    Test your restore procedure at least monthly. Add a cron reminder or calendar event to make this routine.
+  </Step>
+</Steps>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="mongodump or mongorestore command not found (Snap)">
+    You need to add the Snap's binary path to your session:
+
+    ```bash
+    export PATH="/snap/wekan/current/bin:$PATH"
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/snap/wekan/current/lib/x86_64-linux-gnu
+    ```
+
+    Or add these exports to `~/.bashrc` so they persist across sessions.
+  </Accordion>
+
+  <Accordion title="mongorestore errors about existing indexes">
+    If restore fails with index conflict errors, add `--noIndexRestore` to skip index recreation:
+
+    ```bash
+    mongorestore --drop --noIndexRestore --port 27019
+    ```
+  </Accordion>
+
+  <Accordion title="Cards or attachments not visible after restore or upgrade">
+    Open the affected board, click the right sidebar → **Board Settings** → **Migrations**, then run the available migrations. Do not run the **Restore all from archive** migration, as that will unarchive previously archived cards.
+  </Accordion>
+
+  <Accordion title="Disk space warnings">
+    WeKan's requirement documentation recommends monitoring disk space and setting up alerts. A full disk will corrupt the MongoDB database. Check available space with:
+
+    ```bash
+    df -h
+    sudo du -sh /var/snap/wekan/common   # Snap
+    docker system df                      # Docker
+    ```
+  </Accordion>
+</AccordionGroup>

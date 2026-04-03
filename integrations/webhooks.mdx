@@ -1,0 +1,372 @@
+---
+title: "Webhooks"
+description: "Send WeKan events to external services with outgoing webhooks"
+---
+
+Outgoing webhooks let WeKan fire an HTTP POST request to a URL of your choice whenever activity happens on a board. Use them to push notifications to chat tools, trigger automation pipelines, or build custom integrations.
+
+## How outgoing webhooks work
+
+When a board event occurs — a card is created, moved, commented on, archived — WeKan sends a JSON payload to every webhook URL configured for that board. Your endpoint must respond with `200 OK` promptly; WeKan waits for a response before continuing.
+
+<Warning>
+Your webhook endpoint must return `200 OK` immediately after receiving the request. If it times out or returns an error, WeKan's activity queue may stall.
+</Warning>
+
+## Setting up a webhook
+
+<Steps>
+  <Step title="Open the board menu">
+    On any board, click the **≡ Menu** button in the top-right corner to open the board sidebar.
+  </Step>
+  <Step title="Go to Outgoing Webhooks">
+    Scroll down to **Outgoing Webhooks** and click it.
+  </Step>
+  <Step title="Add a new webhook">
+    Click **Add** (or the **+** button). A form appears with the following fields:
+
+    | Field | Description |
+    |-------|-------------|
+    | **URL** | The HTTPS endpoint that will receive POST requests. Private/loopback addresses (e.g. `127.0.0.1`, `192.168.x.x`, `localhost`) are blocked. |
+    | **Token** | An optional secret string included in every payload. Use it to verify that requests originate from WeKan. |
+    | **Title** | A human-readable label for this webhook. |
+  </Step>
+  <Step title="Save">
+    Click **Save**. WeKan immediately begins sending events to that URL.
+  </Step>
+</Steps>
+
+<Tip>
+You can restrict which activities a webhook fires on by editing the `activities` field via the API. The default value is `["all"]`, which sends every event.
+</Tip>
+
+## Filtering webhook attributes
+
+You can limit which fields WeKan sends in the payload using the `WEBHOOKS_ATTRIBUTES` environment variable. Set it to a comma-separated list of field names:
+
+```bash
+WEBHOOKS_ATTRIBUTES=cardId,listId,oldListId,boardId,comment,user,card,commentId
+```
+
+Leave the variable empty (the default) to send all available fields.
+
+## Events and payload format
+
+Every webhook payload shares a common structure. The `description` field identifies the event type. The `text` field contains a human-readable summary with a direct link to the card or board.
+
+### Card events
+
+<AccordionGroup>
+  <Accordion title="Card created (act-createCard)">
+    Fires when a new card is added to any list on the board.
+
+    ```json
+    {
+      "text": "alice created card \"Fix login bug\" to list \"In Progress\" at swimlane \"Default\" at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "swimlaneId": "swim001",
+      "description": "act-createCard"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Card moved (act-moveCard)">
+    Fires when a card is dragged from one list to another.
+
+    ```json
+    {
+      "text": "alice moved card \"Fix login bug\" at board \"Backend\" from list \"Backlog\" at swimlane \"Default\" to list \"In Progress\" at swimlane \"Default\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "oldListId": "list000",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "swimlaneId": "swim001",
+      "description": "act-moveCard"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Card archived (act-archivedCard)">
+    ```json
+    {
+      "text": "alice Card \"Fix login bug\" at list \"Done\" at swimlane \"Default\" at board \"Backend\" moved to Archive\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "swimlaneId": "swim001",
+      "description": "act-archivedCard"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Card restored (act-restoredCard)">
+    ```json
+    {
+      "text": "alice restored card \"Fix login bug\" to list \"In Progress\" at swimlane \"Default\" at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "swimlaneId": "swim001",
+      "description": "act-restoredCard"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Card content events
+
+<AccordionGroup>
+  <Accordion title="Comment added (act-addComment)">
+    ```json
+    {
+      "text": "alice commented on card \"Fix login bug\": \"Reproduced on v6.2\" at list In Progress at swimlane Default at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "boardId": "abc123",
+      "comment": "Reproduced on v6.2",
+      "user": "alice",
+      "card": "Fix login bug",
+      "commentId": "cmt001",
+      "description": "act-addComment"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Comment edited (act-editComment)">
+    ```json
+    {
+      "text": "alice commented on card \"Fix login bug\": \"Reproduced on v6.3\" at list In Progress at swimlane Default at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "boardId": "abc123",
+      "comment": "Reproduced on v6.3",
+      "user": "alice",
+      "card": "Fix login bug",
+      "commentId": "cmt001",
+      "swimlaneId": "swim001",
+      "description": "act-editComment"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Label added (act-addedLabel)">
+    ```json
+    {
+      "text": "alice Added label Bug to card \"Fix login bug\" at list \"In Progress\" at swimlane \"Default\" at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "swimlaneId": "swim001",
+      "description": "act-addedLabel"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Member joined (act-joinMember)">
+    ```json
+    {
+      "text": "alice added member bob to card \"Fix login bug\" at list \"In Progress\" at swimlane \"Default\" at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "swimlaneId": "swim001",
+      "description": "act-joinMember"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Custom field set (act-setCustomField)">
+    ```json
+    {
+      "text": "alice act-setCustomField\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "description": "act-setCustomField"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Attachment added / deleted">
+    **Added:**
+    ```json
+    {
+      "text": "alice added attachment att001 to card \"Fix login bug\" at list In Progress at swimlane Default at board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend/card456",
+      "cardId": "card456",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "description": "act-addAttachment"
+    }
+    ```
+
+    **Deleted:**
+    ```json
+    {
+      "cardId": "card456",
+      "boardId": "abc123",
+      "user": "alice",
+      "card": "Fix login bug",
+      "description": "act-deleteAttachment"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Checklist events">
+    WeKan fires separate events for checklist lifecycle actions:
+
+    | `description` value | Trigger |
+    |---------------------|---------|
+    | `act-addChecklist` | Checklist added to card |
+    | `act-removeChecklist` | Checklist removed from card |
+    | `act-uncompleteChecklist` | Checklist marked incomplete |
+    | `act-addChecklistItem` | Item added to checklist |
+    | `act-checkedItem` | Item checked |
+    | `act-removedChecklistItem` | Item removed from checklist |
+
+    All checklist payloads include `cardId`, `boardId`, `user`, `card`, and `description`. Most include the checklist and item names in the `text` field.
+  </Accordion>
+</AccordionGroup>
+
+### List events
+
+<AccordionGroup>
+  <Accordion title="List created (act-createList)">
+    ```json
+    {
+      "text": "alice added list \"In Review\" to board \"Backend\"\nhttp://wekan.example.com/b/abc123/backend",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "description": "act-createList"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="List archived / removed">
+    ```json
+    {
+      "text": "alice List \"In Review\" at swimlane Default at board \"Backend\" moved to Archive\nhttp://wekan.example.com/b/abc123/backend",
+      "listId": "list789",
+      "boardId": "abc123",
+      "user": "alice",
+      "description": "act-archivedList"
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Swimlane events
+
+Swimlane events (`act-createSwimlane`, `act-archivedSwimlane`, `act-removeSwimlane`) follow the same structure as list events and include a `swimlaneId` field.
+
+### Board events
+
+| `description` | Trigger |
+|---------------|---------|
+| `act-createCustomField` | A custom field is created on the board |
+
+## Integrating with chat tools
+
+WeKan webhooks are compatible with any service that accepts HTTP POST with a JSON body.
+
+<Tabs>
+  <Tab title="Slack">
+    Create an [Incoming Webhook](https://api.slack.com/messaging/webhooks) in your Slack app settings and paste the generated URL into the WeKan webhook form. Slack expects a `text` field in the JSON body, which WeKan includes in every payload.
+  </Tab>
+  <Tab title="Discord">
+    In a Discord channel, go to **Edit Channel → Integrations → Webhooks → New Webhook**. Copy the webhook URL and append `/slack` to it (Discord's Slack-compatible endpoint), then paste it into WeKan.
+
+    ```
+    https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN/slack
+    ```
+  </Tab>
+  <Tab title="Rocket.Chat">
+    In Rocket.Chat, go to **Administration → Integrations → New → Incoming**. Enable it, set the channel, and copy the generated webhook URL into WeKan. You can also run Rocket.Chat as a self-hosted Snap:
+
+    ```bash
+    sudo snap install rocketchat-server
+    sudo snap set rocketchat-server siteurl='https://chat.yourcompany.com'
+    ```
+
+    See the [Rocket.Chat OAuth2 guide](/integrations/ldap-oauth) if you want users to log in to WeKan via Rocket.Chat.
+  </Tab>
+  <Tab title="Other tools">
+    Any service that can receive HTTP POST requests works: Zapier, Make (Integromat), n8n, Node-RED, Huginn, Flogo, or a custom PHP/Python/Java endpoint. The `text` field in the payload is a ready-made human-readable message you can forward directly.
+  </Tab>
+</Tabs>
+
+## Testing webhooks
+
+Use a service like [webhook.site](https://webhook.site) or a local [ngrok](https://ngrok.com) tunnel to inspect payloads during development. Paste the temporary URL into the WeKan webhook form and trigger a card event to see the exact JSON body.
+
+For local network testing you can run a lightweight server such as Node-RED or a simple PHP endpoint. Whichever you use, make sure it responds `200 OK` immediately.
+
+## Securing webhooks with tokens
+
+Set a **Token** when creating the webhook. WeKan includes it in each payload body under the key `token`. In your receiving endpoint, check that the value matches what you configured before processing the request:
+
+```python
+import hmac, hashlib, json
+from flask import Flask, request, abort
+
+EXPECTED_TOKEN = "your-secret-token"
+
+app = Flask(__name__)
+
+@app.route("/webhook", methods=["POST"])
+def receive():
+    body = request.get_json()
+    if body.get("token") != EXPECTED_TOKEN:
+        abort(401)
+    # process body ...
+    return "", 200
+```
+
+<Note>
+The token is sent in the JSON body, not as an HTTP header. Keep it secret; anyone with the token value can forge a valid-looking request to your endpoint.
+</Note>
+
+## Webhook data model
+
+The integration record stored in WeKan's database has this schema (from `models/integrations.js`):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | boolean | Whether the webhook is active (default: `true`) |
+| `title` | string | Human-readable label |
+| `type` | string | `"outgoing-webhooks"` (default) or `"bidirectional-webhooks"` |
+| `activities` | array | List of event names to trigger on; `["all"]` by default |
+| `url` | string | Target endpoint URL (must be `http://` or `https://`; private IP ranges blocked) |
+| `token` | string | Optional shared secret included in every payload |
+| `boardId` | string | Board this webhook is scoped to |
+| `userId` | string | ID of the user who created the integration |
+
+<AccordionGroup>
+  <Accordion title="Troubleshooting: webhook is not firing">
+    - Verify the webhook is enabled (the toggle next to the URL in the Outgoing Webhooks list is on).
+    - Check that the target URL is publicly reachable and returns `200 OK`. Private/loopback addresses (`127.0.0.1`, `192.168.x.x`, `localhost`) are blocked by WeKan.
+    - Look at your server's network logs to confirm WeKan is making outbound requests.
+    - Enable debug logging on your receiving server to see if the request arrives but your handler throws an error.
+  </Accordion>
+  <Accordion title="Troubleshooting: payload is missing fields">
+    Check the `WEBHOOKS_ATTRIBUTES` environment variable on your WeKan server. If it is set to a non-empty value, only the listed fields are included. Set it to an empty string to restore all fields.
+  </Accordion>
+  <Accordion title="Troubleshooting: Rocket.Chat or Slack shows raw JSON">
+    Those services expect a `text` field at the top level of the JSON body. WeKan includes `text` in every payload, so the integration should work out of the box. If you see raw JSON, check whether a middleware layer (e.g. Zapier) is transforming the payload before forwarding it.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,119 @@
+---
+title: "Custom fields"
+description: "Add structured data to cards with custom field types"
+---
+
+**Custom fields** let you attach structured, typed data to cards beyond the built-in fields like title, description, and due date. You define fields at the board level and then fill in values on individual cards.
+
+Common uses include tracking ticket IDs, budget figures, priority scores, statuses, or any other data your workflow requires.
+
+## Field types
+
+WeKan supports the following custom field types:
+
+<CardGroup cols={2}>
+  <Card title="Text" icon="text-cursor-input">
+    A freeform single-line text value. Use for short notes, identifiers, or any unstructured string data.
+  </Card>
+  <Card title="Number" icon="hash">
+    A numeric value. Use for counts, scores, or quantities.
+  </Card>
+  <Card title="Date" icon="calendar">
+    A date picker. Use for deadlines, release dates, or other milestones separate from the built-in due date.
+  </Card>
+  <Card title="Dropdown" icon="chevron-down">
+    A list of predefined options you choose from. Use for statuses, categories, or any enumerated value.
+  </Card>
+  <Card title="Checkbox" icon="square-check">
+    A true/false toggle. Use for approval flags, blocking indicators, or binary attributes.
+  </Card>
+  <Card title="Currency" icon="dollar-sign">
+    A numeric value formatted with a currency code. Use for budget tracking, cost estimates, or pricing.
+  </Card>
+  <Card title="String template" icon="braces">
+    A value assembled from a configurable format string and separator. Use for composite identifiers or formatted references.
+  </Card>
+</CardGroup>
+
+## Creating a custom field
+
+Custom fields are created at the board level and then applied to individual cards.
+
+<Steps>
+  <Step title="Open the board menu">
+    Click the **≡** (hamburger) icon in the top-right corner of the board to open the board menu.
+  </Step>
+  <Step title="Open Custom Fields">
+    Click **Custom Fields** in the board menu. The custom fields panel opens on the right.
+  </Step>
+  <Step title="Create a new field">
+    Click **Create Field**. A form appears asking for the field name, type, and optional settings.
+  </Step>
+  <Step title="Configure the field">
+    Enter a name and select the field type. For **Dropdown** fields, add the list of options. For **Currency** fields, enter the currency code (for example, `USD` or `EUR`).
+  </Step>
+  <Step title="Set display options">
+    Choose whether to show the field value on card minicards (**Show on card**), always include the field on every card (**Always on card**), or show a sum of numeric values at the top of each list (**Show sum at top of list**).
+  </Step>
+  <Step title="Save">
+    Click **Save**. The field is now available to all cards on this board.
+  </Step>
+</Steps>
+
+## Applying a custom field to a card
+
+<Steps>
+  <Step title="Open the card">
+    Click the card to open its detail view.
+  </Step>
+  <Step title="Open the card menu">
+    Click the **≡** icon inside the card detail view.
+  </Step>
+  <Step title="Select Edit custom fields">
+    Click **Edit custom fields**. A panel lists all custom fields defined on this board.
+  </Step>
+  <Step title="Add the field to the card">
+    Click the custom field name you want to add. It is inserted into the card.
+  </Step>
+  <Step title="Enter a value">
+    Click the field value area on the card and enter or select a value. For dropdowns, choose from the predefined options. For dates, use the date picker.
+  </Step>
+</Steps>
+
+After a value is set, it appears in the card detail view. If **Show on card** is enabled, the field and its value also appear on the card miniature on the board.
+
+## Filtering by custom field values
+
+Once custom fields have values on cards, you can filter the board to show only cards matching specific criteria.
+
+<Steps>
+  <Step title="Open the filter panel">
+    Click **Filter** in the board header, or press <kbd>F</kbd>.
+  </Step>
+  <Step title="Select a custom field">
+    In the filter panel, find the custom field section. Select the field and value you want to filter by.
+  </Step>
+  <Step title="Apply the filter">
+    The board immediately hides cards that do not match. The filter indicator in the header turns active to show a filter is applied.
+  </Step>
+  <Step title="Clear the filter">
+    Click **Clear Filter** or press <kbd>Esc</kbd> to remove all active filters.
+  </Step>
+</Steps>
+
+## Use cases
+
+<AccordionGroup>
+  <Accordion title="Ticket tracking">
+    Add a **Text** custom field named `Ticket ID` and fill in the corresponding ID from your issue tracker. Enable **Show on card** so ticket IDs are visible on minicards without opening each card.
+  </Accordion>
+  <Accordion title="Budget tracking">
+    Add a **Currency** custom field named `Cost Estimate`. Enable **Show sum at top of list** to see the total estimated cost per workflow stage at a glance.
+  </Accordion>
+  <Accordion title="Approval workflow">
+    Add a **Checkbox** custom field named `Approved`. Filter the board to show only approved or unapproved cards during review meetings.
+  </Accordion>
+  <Accordion title="Release targeting">
+    Add a **Dropdown** custom field named `Target Release` with options like `v1.0`, `v1.1`, and `Backlog`. Filter by release to create a focused view for each milestone.
+  </Accordion>
+</AccordionGroup>

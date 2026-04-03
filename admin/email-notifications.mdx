@@ -1,0 +1,221 @@
+---
+title: "Email Notifications"
+description: "Configure email delivery and notification settings"
+---
+
+WeKan uses SMTP to send transactional emails such as password resets, user invitations, and board activity notifications. Email must be configured at the server level — it is set via environment variables, not the Admin Panel UI.
+
+<Warning>
+  As of WeKan v5.02, email is configured **only** through environment variables (`MAIL_URL` and `MAIL_FROM`). The Admin Panel email form was removed. Settings entered there in older versions no longer apply.
+</Warning>
+
+---
+
+## Required configuration
+
+Set the following two environment variables wherever you run WeKan:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `MAIL_URL` | Full SMTP connection URL including credentials and options | `smtp://user:pass@mail.example.com:587` |
+| `MAIL_FROM` | Sender name and address shown on outgoing emails | `WeKan Boards <noreply@example.com>` |
+
+<Note>
+  If your username or password contains special characters (e.g. `@`, `#`, `%`), URL-encode them before including them in `MAIL_URL`. For example, `@` becomes `%40`. You can use a tool like [url-encode-decode.com](https://www.url-encode-decode.com) to convert. AWS SES credentials do not require encoding.
+</Note>
+
+---
+
+## Setting up email by deployment type
+
+<CodeGroup>
+
+```bash Docker (docker-compose.yml)
+environment:
+  - MAIL_URL=smtp://user%40example.com:password@smtp.example.com:587
+  - MAIL_FROM=WeKan Boards <noreply@example.com>
+```
+
+```bash Snap
+sudo snap set wekan mail-url='smtp://user%40example.com:password@smtp.example.com:587'
+sudo snap set wekan mail-from='WeKan Boards <noreply@example.com>'
+```
+
+```bash Source / shell script
+export MAIL_URL='smtp://user%40example.com:password@smtp.example.com:587'
+export MAIL_FROM='WeKan Boards <noreply@example.com>'
+```
+
+</CodeGroup>
+
+After changing these values, restart WeKan for the new settings to take effect.
+
+---
+
+## Provider examples
+
+### Gmail
+
+Gmail requires an app-specific password if you have 2FA enabled. Generate one in your Google Account under **Security** → **App passwords**.
+
+```bash
+MAIL_URL='smtps://user%40gmail.com:app-password@smtp.gmail.com:465'
+MAIL_FROM='WeKan Boards <user@gmail.com>'
+```
+
+### Microsoft Office 365
+
+```bash
+MAIL_URL='smtp://user%40example.com:password@smtp.office365.com:587?ignoreTLS=false&tls={rejectUnauthorized:false}&secure=true'
+MAIL_FROM='WeKan Boards <user@example.com>'
+```
+
+### AWS SES
+
+```bash
+MAIL_URL='smtp://AKIAIOSFODNN7EXAMPLE:wJalrXUtnFEMI@email-smtp.eu-west-1.amazonaws.com:587?tls={ciphers:"SSLv3"}&secureConnection=false'
+MAIL_FROM='WeKan Boards <boards@example.com>'
+```
+
+<Note>
+  AWS SES requires you to verify your sender domain and email address in the SES console before WeKan can send mail. Add an SPF TXT record to your DNS that includes `include:amazonses.com`.
+</Note>
+
+### ProtonMail Bridge
+
+ProtonMail Bridge runs locally and does not use TLS between WeKan and the bridge.
+
+```bash
+MAIL_URL='smtp://USER%40DOMAIN:PASSWORD@127.0.0.1:1025?ignoreTLS=true&tls={rejectUnauthorized:false}&secure=false'
+MAIL_FROM='WeKan Boards <user@domain.com>'
+```
+
+### Zoho Mail
+
+```bash
+MAIL_URL='smtps://user1%40example.com:password@smtp.zoho.com:465/'
+MAIL_FROM='WeKan Notifications <user1@example.com>'
+```
+
+---
+
+## What triggers email notifications
+
+WeKan sends emails for the following events:
+
+- **Password reset** — when a user requests a reset link
+- **Email verification** — when a new account is created and email verification is enabled
+- **Board invitations** — when a user is invited to a board via invitation code
+- **Card assignments** — when a card is assigned to a user
+- **Due date reminders** — when a card's due date is approaching (if configured)
+- **Board watches** — activity on boards the user is watching
+- **Comment notifications** — when comments are added to watched cards
+
+---
+
+## Per-user notification preferences
+
+Each user can manage their own notification preferences from their profile:
+
+<Steps>
+  <Step title="Open profile settings">
+    Click your avatar in the top-right corner and select **Profile**.
+  </Step>
+  <Step title="Go to Notifications">
+    Scroll to the **Notifications** section.
+  </Step>
+  <Step title="Adjust preferences">
+    Enable or disable email notifications for specific activity types such as card changes, comments, and due date alerts.
+  </Step>
+</Steps>
+
+---
+
+## Checking that email is working
+
+To verify your configuration is correct, trigger a password reset email:
+
+<Steps>
+  <Step title="Log out of WeKan">
+    Click your avatar → **Sign out**.
+  </Step>
+  <Step title="Click Forgot password">
+    On the login page, click the **Forgot your password?** link.
+  </Step>
+  <Step title="Enter an email address">
+    Enter the address of an existing WeKan account and submit the form.
+  </Step>
+  <Step title="Check your mail and server logs">
+    If the email does not arrive, check your WeKan server logs for error output.
+  </Step>
+</Steps>
+
+### Viewing logs
+
+<CodeGroup>
+
+```bash Docker
+docker compose logs -f wekan
+```
+
+```bash Snap
+journalctl -u snap.wekan.wekan
+```
+
+```bash Source
+tail -f /path/to/wekan.log
+```
+
+</CodeGroup>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ECONNREFUSED — connection refused">
+    The port number in `MAIL_URL` is wrong or the SMTP server is not reachable. Common ports:
+
+    - `25` — plain SMTP (often blocked by ISPs)
+    - `587` — STARTTLS (most common)
+    - `465` — SMTPS (TLS from the start)
+
+    Verify network connectivity from your WeKan server to the SMTP host and port.
+  </Accordion>
+
+  <Accordion title="SSL23_GET_SERVER_HELLO unknown protocol">
+    This means WeKan is trying to use TLS but the server expects STARTTLS, or vice versa. Try adding `?ignoreTLS=true&tls={rejectUnauthorized:false}&secure=false` to your `MAIL_URL`, or switch between `smtp://` and `smtps://`.
+
+    ```bash
+    MAIL_URL='smtp://user%40example.com:password@mail.example.com:587/?ignoreTLS=true&tls={rejectUnauthorized:false}&secure=false'
+    ```
+  </Accordion>
+
+  <Accordion title="Self-signed certificate error">
+    WeKan does not trust self-signed certificates by default. Options (in order of preference):
+
+    1. Obtain a certificate from a public CA (e.g. Let's Encrypt).
+    2. Add `?tls={rejectUnauthorized:false}` to `MAIL_URL` to skip certificate verification.
+    3. Add `?ignoreTLS=true` to disable TLS entirely (only appropriate for internal networks).
+  </Accordion>
+
+  <Accordion title="unable to verify the first certificate">
+    The intermediate certificate chain on your SMTP server is incomplete. Contact your SMTP server administrator to install the full certificate chain.
+  </Accordion>
+
+  <Accordion title="No errors in logs but emails are not arriving">
+    If WeKan logs show no errors, the problem is on the receiving end. Check:
+
+    - The SMTP server's own mail logs
+    - Spam/junk folders on the recipient's mail client
+    - SPF, DKIM, and DMARC DNS records for your sending domain
+  </Accordion>
+
+  <Accordion title="Server does not require authentication">
+    If your SMTP server does not require a username and password (e.g. an internal relay like IBM Notes or Postfix), omit credentials entirely from `MAIL_URL`:
+
+    ```bash
+    MAIL_URL='smtp://your-internal-smtp-relay:25'
+    ```
+  </Accordion>
+</AccordionGroup>

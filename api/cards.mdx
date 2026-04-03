@@ -1,0 +1,459 @@
+---
+title: "Cards API"
+description: "Create, update, and manage cards via the REST API"
+---
+
+<Note>
+  All endpoints require a Bearer token in the `Authorization` header. Cards belong to a board, a list, and a swimlane. You must provide valid IDs for all three when creating a card.
+</Note>
+
+## Get all cards in a list
+
+Retrieve all cards in a specific list.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/lists/:listId/cards` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -X GET \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards
+```
+
+### Response
+
+```json
+[
+  {
+    "_id": "AzEeHS7KAGeYZCcak",
+    "title": "Create Auth Code",
+    "description": "Create Auth Code for application.",
+    "listId": "PgTuf6sFJsaxto5dC"
+  }
+]
+```
+
+---
+
+## Get all cards in a swimlane
+
+Retrieve all cards belonging to a specific swimlane.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/swimlanes/:swimlaneId/cards` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="swimlaneId" type="string" required>
+  The ID of the swimlane.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -X GET \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/swimlanes/PgTuf6sFJsaxto5dC/cards
+```
+
+---
+
+## Create a card
+
+Add a new card to a list on a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/lists/:listId/cards` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board where the card will be created.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list the card will be added to.
+</ParamField>
+
+### Request parameters
+
+<ParamField body="authorId" type="string" required>
+  The user ID of the card author. Must be an existing Wekan user ID.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  The title of the card.
+</ParamField>
+
+<ParamField body="swimlaneId" type="string" required>
+  The ID of the swimlane the card belongs to.
+</ParamField>
+
+<ParamField body="description" type="string">
+  A detailed description of the card. Supports Markdown.
+</ParamField>
+
+<ParamField body="members" type="array">
+  Array of user IDs assigned as members of the card.
+</ParamField>
+
+<ParamField body="assignees" type="array">
+  Array of user IDs assigned as assignees of the card.
+</ParamField>
+
+<ParamField body="labelIds" type="array">
+  Array of label IDs to attach to the card. Labels must exist on the board.
+</ParamField>
+
+<ParamField body="dueAt" type="string">
+  Due date for the card in ISO 8601 format (e.g. `"2024-12-31T00:00:00.000Z"`).
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards \
+     -d '{ "title": "Card title text", "description": "Card description text", "authorId": "XQMZgynx9M79qTtQc", "swimlaneId": "W9m9YxQKT6zZrKzRW" }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created card.
+</ResponseField>
+
+```json
+{
+  "_id": "W9m9YxQKT6zZrKzRW"
+}
+```
+
+---
+
+## Get a card
+
+Retrieve details about a specific card.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/lists/:listId/cards/:cardId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list the card belongs to.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The ID of the card to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -X GET \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards/ssrNX9CvXvPxuC5DE
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique card identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The card title.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  The card description.
+</ResponseField>
+
+<ResponseField name="listId" type="string">
+  The ID of the list this card belongs to.
+</ResponseField>
+
+<ResponseField name="boardId" type="string">
+  The ID of the board this card belongs to.
+</ResponseField>
+
+<ResponseField name="swimlaneId" type="string">
+  The ID of the swimlane this card belongs to.
+</ResponseField>
+
+<ResponseField name="members" type="array">
+  Array of user IDs who are members of this card.
+</ResponseField>
+
+<ResponseField name="assignees" type="array">
+  Array of user IDs assigned to this card.
+</ResponseField>
+
+<ResponseField name="labelIds" type="array">
+  Array of label IDs attached to this card.
+</ResponseField>
+
+<ResponseField name="dueAt" type="string">
+  ISO 8601 due date, if set.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of card creation.
+</ResponseField>
+
+<ResponseField name="modifiedAt" type="string">
+  ISO 8601 timestamp of last modification.
+</ResponseField>
+
+<ResponseField name="archived" type="boolean">
+  Whether the card is archived.
+</ResponseField>
+
+<ResponseField name="customFields" type="array">
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      The custom field definition ID.
+    </ResponseField>
+    <ResponseField name="value" type="string">
+      The value stored for this custom field on this card.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Update a card
+
+Update a card's title, description, list, or other fields. Only fields provided in the request body are changed.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `PUT`  | `/api/boards/:boardId/lists/:listId/cards/:cardId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list the card currently belongs to.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The ID of the card to update.
+</ParamField>
+
+<ParamField body="title" type="string">
+  A new title for the card.
+</ParamField>
+
+<ParamField body="description" type="string">
+  A new description for the card.
+</ParamField>
+
+<ParamField body="listId" type="string">
+  Move the card to a different list by providing the destination list ID.
+</ParamField>
+
+<ParamField body="customFields" type="array">
+  Array of custom field value objects. Each object must include `_id` (the custom field ID) and `value`.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards/ssrNX9CvXvPxuC5DE \
+     -d '{ "title": "New title text", "listId": "RPRtDTQMKpShpgqoj", "description": "New description text" }'
+```
+
+**Update a custom field on a card:**
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards/ssrNX9CvXvPxuC5DE \
+     -d '{ "customFields": [ { "_id": "oZHkpcaxDHnbkbqGo", "value": "foobar" } ] }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the updated card.
+</ResponseField>
+
+```json
+{
+  "_id": "ssrNX9CvXvPxuC5DE"
+}
+```
+
+---
+
+## Delete a card
+
+Permanently delete a card.
+
+| Method   | Endpoint |
+| -------- | -------- |
+| `DELETE` | `/api/boards/:boardId/lists/:listId/cards/:cardId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list the card belongs to.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The ID of the card to delete.
+</ParamField>
+
+<ParamField body="authorId" type="string" required>
+  The user ID of the user performing the deletion.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X DELETE \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC/cards/ssrNX9CvXvPxuC5DE \
+     -d '{ "authorId": "XQMZgynx9M79qTtQc" }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the deleted card.
+</ResponseField>
+
+```json
+{
+  "_id": "ssrNX9CvXvPxuC5DE"
+}
+```
+
+<Warning>
+  Deleting a card is permanent. All attached checklists, comments, and attachments associated with the card are also removed.
+</Warning>
+
+---
+
+## Get checklists on a card
+
+Retrieve all checklists attached to a card.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/cards/:cardId/checklists` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The ID of the card.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/cards/ssrNX9CvXvPxuC5DE/checklists
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique checklist identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The checklist title.
+</ResponseField>
+
+```json
+[
+  {
+    "_id": "Ck3xRqNuoAMCJoAjK",
+    "title": "Acceptance Criteria"
+  }
+]
+```
+
+---
+
+## Create a checklist on a card
+
+Add a new checklist with items to a card.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/cards/:cardId/checklists` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board.
+</ParamField>
+
+<ParamField path="cardId" type="string" required>
+  The ID of the card.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  The title of the checklist.
+</ParamField>
+
+<ParamField body="items" type="array" required>
+  An array of checklist item objects to create along with the checklist.
+  <Expandable title="properties">
+    <ResponseField name="title" type="string">
+      The text of the checklist item.
+    </ResponseField>
+  </Expandable>
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/cards/ssrNX9CvXvPxuC5DE/checklists \
+     -d '{ "title": "Acceptance Criteria", "items": [{"title": "Write unit tests"}, {"title": "Pass code review"}] }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created checklist.
+</ResponseField>
+
+```json
+{
+  "_id": "Ck3xRqNuoAMCJoAjK"
+}
+```

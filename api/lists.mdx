@@ -1,0 +1,202 @@
+---
+title: "Lists API"
+description: "Manage lists within a board via the REST API"
+---
+
+<Note>
+  All endpoints require a Bearer token in the `Authorization` header. Obtain a token by logging in via `POST /users/login`. Lists are the columns on a Wekan board and belong to a specific board.
+</Note>
+
+## Get all lists
+
+Retrieve all non-archived lists for a given board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/lists` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board whose lists you want to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists
+```
+
+### Response
+
+Returns an array of list objects. Archived lists are excluded.
+
+<ResponseField name="_id" type="string">
+  Unique list identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The list title.
+</ResponseField>
+
+```json
+[
+  {
+    "_id": "PgTuf6sFJsaxto5dC",
+    "title": "To Do"
+  },
+  {
+    "_id": "RPRtDTQMKpShpgqoj",
+    "title": "In Progress"
+  },
+  {
+    "_id": "BsNr28znDkG8aeo7W",
+    "title": "Done"
+  }
+]
+```
+
+---
+
+## Create a list
+
+Add a new list (column) to a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/boards/:boardId/lists` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board where the list will be created.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  The title of the new list.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists \
+     -d '{"title": "Backlog"}'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created list.
+</ResponseField>
+
+```json
+{
+  "_id": "PgTuf6sFJsaxto5dC"
+}
+```
+
+---
+
+## Get a list
+
+Retrieve details about a specific list on a board.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/boards/:boardId/lists/:listId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board the list belongs to.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC
+```
+
+### Response
+
+Returns the full list document. Archived lists return no result.
+
+<ResponseField name="_id" type="string">
+  Unique list identifier.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The list title.
+</ResponseField>
+
+<ResponseField name="boardId" type="string">
+  The ID of the board this list belongs to.
+</ResponseField>
+
+<ResponseField name="archived" type="boolean">
+  Whether the list is archived.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the list was created.
+</ResponseField>
+
+<ResponseField name="sort" type="number">
+  The sort order of the list among other lists on the board.
+</ResponseField>
+
+```json
+{
+  "_id": "PgTuf6sFJsaxto5dC",
+  "title": "To Do",
+  "boardId": "YRgy7Ku6uLFv2pYwZ",
+  "archived": false,
+  "createdAt": "2024-01-15T09:30:00.000Z",
+  "sort": 0
+}
+```
+
+---
+
+## Delete a list
+
+Permanently delete a list from a board. This also removes all cards within the list.
+
+| Method   | Endpoint |
+| -------- | -------- |
+| `DELETE` | `/api/boards/:boardId/lists/:listId` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="boardId" type="string" required>
+  The ID of the board the list belongs to.
+</ParamField>
+
+<ParamField path="listId" type="string" required>
+  The ID of the list to delete.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -X DELETE \
+     http://localhost:3000/api/boards/YRgy7Ku6uLFv2pYwZ/lists/PgTuf6sFJsaxto5dC
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the deleted list.
+</ResponseField>
+
+```json
+{
+  "_id": "PgTuf6sFJsaxto5dC"
+}
+```
+
+<Warning>
+  Deleting a list is permanent and cannot be undone. All cards within the list will be removed as well.
+</Warning>

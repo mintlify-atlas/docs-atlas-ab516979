@@ -1,0 +1,291 @@
+---
+title: "Snap Installation"
+description: "Install WeKan as a Snap package on Linux"
+---
+
+The WeKan Snap package is the easiest way to install WeKan on Linux. It includes WeKan, MongoDB, and an optional Caddy HTTPS proxy — all in a single package that updates automatically.
+
+<Tip>
+  Snap is the recommended installation method for Linux. Automatic updates keep your WeKan instance current without manual intervention.
+</Tip>
+
+## Supported platforms
+
+Snap works on any 64-bit Linux distribution that supports snapd, including:
+
+- Ubuntu (recommended)
+- Debian
+- Arch Linux
+- Fedora
+- Solus
+- OpenSUSE
+- Gentoo
+- Manjaro
+- Elementary OS
+- CentOS 7 / RHEL 7 and newer
+- CentOS 8
+
+For distro-specific snapd installation instructions, see [snapcraft.io](https://snapcraft.io).
+
+## Installation
+
+<Steps>
+  <Step title="Switch to root">
+    Snap management commands require root:
+
+    ```bash
+    sudo su
+    ```
+  </Step>
+
+  <Step title="Install snapd">
+    <Tabs>
+      <Tab title="Debian / Ubuntu">
+        ```bash
+        apt install snapd
+        ```
+      </Tab>
+      <Tab title="Other distros">
+        Follow the instructions for your distribution at [snapcraft.io](https://snapcraft.io).
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Install WeKan">
+    ```bash
+    snap install wekan
+    ```
+  </Step>
+
+  <Step title="Set the root URL">
+    This is the most important setting. WeKan will not work correctly (opening cards, internal links) without it.
+
+    ```bash
+    snap set wekan root-url='https://wekan.example.com'
+    ```
+
+    Common ROOT_URL examples:
+
+    <CodeGroup>
+
+    ```bash Local machine
+    snap set wekan root-url='http://localhost:8080'
+    ```
+
+    ```bash LAN server
+    snap set wekan root-url='http://192.168.10.100:5000'
+    ```
+
+    ```bash Behind Nginx or Caddy (HTTPS)
+    snap set wekan root-url='https://example.com'
+    ```
+
+    ```bash Sub-path
+    snap set wekan root-url='https://example.com/wekan'
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Set the port">
+    Set the port WeKan listens on. Use `80` for direct HTTP access, or a local port like `3001` when running behind a reverse proxy:
+
+    ```bash
+    snap set wekan port='3001'
+    ```
+
+    After changing the port, restart WeKan for the change to take effect:
+
+    ```bash
+    systemctl restart snap.wekan.wekan
+    ```
+  </Step>
+
+  <Step title="Configure email (optional)">
+    To enable email notifications:
+
+    ```bash
+    sudo snap set wekan mail-url='smtps://user:pass@mailserver.example.com:453'
+    sudo snap set wekan mail-from='Wekan Boards <support@example.com>'
+    ```
+
+    <Note>
+      Use `smtps://` for SSL connections and `smtp://` for plain SMTP. Special characters in the password must be URL-encoded.
+    </Note>
+  </Step>
+</Steps>
+
+## Configuration reference
+
+All settings are applied with `snap set wekan <key>='<value>'`. Settings changes automatically restart the wekan, mongodb, and caddy services.
+
+To list all available settings and their descriptions:
+
+```bash
+wekan.help | less
+```
+
+To view your current settings:
+
+```bash
+sudo snap get wekan
+```
+
+### Core settings
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `root-url` | `http://127.0.0.1` | Full public URL of your WeKan instance. |
+| `port` | `8080` | Port WeKan is exposed on. |
+| `mail-url` | `smtp://user:pass@mailserver.examples.com:25/` | SMTP connection string for outgoing email. |
+| `mail-from` | `wekan-admin@example.com` | Sender name and address for notification emails. |
+| `with-api` | `true` | Enables the WeKan REST API. Disabling also disables board JSON export. |
+| `browser-policy-enabled` | `true` | Enables browser security policy. Disabling is not recommended. |
+| `cors` | *(disabled)* | Sets `Access-Control-Allow-Origin` header, e.g. `'*'`. |
+| `trusted-url` | *(empty)* | URL allowed to embed WeKan in an iframe when browser policy is enabled. |
+| `webhooks-attributes` | *(default set)* | Controls which fields are sent to outgoing webhooks. |
+
+### MongoDB settings
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `mongodb-port` | `27019` | Port the bundled MongoDB listens on. |
+| `mongodb-bind-ip` | *(unix socket)* | IP address for MongoDB binding, e.g. `127.0.0.1`. |
+| `disable-mongodb` | `false` | Set to `true` to use an external MongoDB instead of the bundled one. |
+
+### Caddy (automatic HTTPS) settings
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `caddy-enabled` | `false` | Set to `true` to enable the bundled Caddy HTTPS proxy. |
+| `caddy-bind-port` | `3001` | Port Caddy will proxy from. Must match `port`. |
+
+Edit the Caddyfile to configure your domain:
+
+```bash
+nano /var/snap/wekan/common/Caddyfile
+```
+
+Then enable Caddy:
+
+```bash
+snap set wekan caddy-enabled='true'
+```
+
+## Starting, stopping, and checking status
+
+WeKan runs as two systemd services: one for the WeKan application and one for MongoDB.
+
+<CodeGroup>
+
+```bash WeKan service
+# Status
+sudo systemctl status snap.wekan.wekan
+
+# Start
+sudo systemctl start snap.wekan.wekan
+
+# Stop
+sudo systemctl stop snap.wekan.wekan
+
+# Restart
+sudo systemctl restart snap.wekan.wekan
+```
+
+```bash MongoDB service
+# Status
+sudo systemctl status snap.wekan.mongodb
+
+# Start
+sudo systemctl start snap.wekan.mongodb
+
+# Stop
+sudo systemctl stop snap.wekan.mongodb
+
+# Restart
+sudo systemctl restart snap.wekan.mongodb
+```
+
+</CodeGroup>
+
+To disable and re-enable the entire WeKan snap:
+
+```bash
+sudo snap disable wekan
+sudo snap enable wekan
+```
+
+## Checking logs
+
+Use `journalctl` to view service logs:
+
+<CodeGroup>
+
+```bash WeKan app logs
+sudo journalctl -u snap.wekan.wekan -f
+```
+
+```bash MongoDB logs
+sudo journalctl -u snap.wekan.mongodb -f
+```
+
+</CodeGroup>
+
+## Updating
+
+WeKan Snap updates automatically. To trigger a manual update:
+
+```bash
+sudo snap refresh wekan
+```
+
+### Scheduling automatic updates
+
+To install all Snap updates automatically between 02:00 AM and 04:00 AM:
+
+```bash
+snap set core refresh.schedule=02:00-04:00
+```
+
+Update once a week on Sundays between 02:00 AM and 04:00 AM:
+
+```bash
+snap set core refresh.schedule=sun,02:00-04:00
+```
+
+Update on the last Sunday of the month between 02:00 AM and 04:00 AM:
+
+```bash
+snap set core refresh.schedule=sun5,02:00-04:00
+```
+
+<Note>
+  If you need to prevent all Snap updates (for example on an air-gapped server), add this line to `/etc/hosts`:
+  ```
+  127.0.0.1 api.snapcraft.io
+  ```
+</Note>
+
+## LDAP and OAuth2
+
+LDAP settings are configured the same way as other snap settings:
+
+```bash
+sudo snap set wekan ldap-enable='true'
+sudo snap set wekan default-authentication-method='ldap'
+sudo snap set wekan ldap-fullname-field='CN'
+```
+
+For the full list of supported LDAP and OAuth2 keys, run:
+
+```bash
+wekan.help | less
+```
+
+## Connecting to MongoDB CLI
+
+The bundled MongoDB uses port `27019` by default:
+
+```bash
+mongo --port 27019
+```

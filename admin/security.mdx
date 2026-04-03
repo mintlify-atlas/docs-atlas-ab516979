@@ -1,0 +1,193 @@
+---
+title: "Security"
+description: "Secure your WeKan instance with best practices"
+---
+
+## Keep WeKan updated
+
+<Warning>
+  Only the newest version of WeKan is supported. Older releases contain known vulnerabilities due to outdated Node.js and dependency versions. Update as soon as new releases are published.
+</Warning>
+
+WeKan releases multiple times a week. Staying current is the single most impactful security measure you can take.
+
+| Deployment | How to update |
+|------------|---------------|
+| **Snap** | Updates automatically. Verify with `sudo snap refresh` |
+| **Docker** | Pull the latest image and recreate the container |
+| **Source** | Pull the latest code and rebuild |
+
+```bash
+# Verify the installed Snap version
+sudo snap list wekan
+
+# Manually trigger a Snap update
+sudo snap refresh wekan
+```
+
+---
+
+## HTTPS requirement
+
+WeKan should always be served over HTTPS in production. HTTP transmits session cookies and credentials in plaintext.
+
+<Steps>
+  <Step title="Obtain a TLS certificate">
+    Use [Let's Encrypt](https://letsencrypt.org) (free) or your organization's CA. For Snap installs, WeKan includes a bundled Caddy server that can handle certificate provisioning.
+  </Step>
+  <Step title="Set ROOT_URL to your HTTPS address">
+    WeKan generates internal links based on `ROOT_URL`. If this is set to an `http://` address, password reset links and invitation emails will use insecure URLs.
+
+    ```bash
+    # Snap
+    sudo snap set wekan root-url='https://boards.example.com'
+
+    # Docker (docker-compose.yml)
+    # - ROOT_URL=https://boards.example.com
+    ```
+  </Step>
+  <Step title="Configure a reverse proxy or Caddy">
+    Place WeKan behind a proxy (Nginx, Caddy, Traefik, etc.) that terminates TLS and forwards requests to WeKan's internal port.
+  </Step>
+</Steps>
+
+<Tip>
+  If you use the Caddy server bundled with the WeKan Snap, enable it with:
+
+  ```bash
+  sudo snap set wekan caddy-enabled='true'
+  ```
+
+  Caddy automatically obtains and renews Let's Encrypt certificates.
+</Tip>
+
+---
+
+## Brute force protection and account lockout
+
+WeKan locks accounts after repeated failed login attempts. This is enabled by default.
+
+### Default thresholds
+
+| Setting | Known users | Unknown usernames |
+|---------|-------------|-------------------|
+| Failures before lockout | 3 | 3 |
+| Lockout period | 60 seconds | 60 seconds |
+| Failure window | 15 seconds | 15 seconds |
+
+### Adjusting lockout settings
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Go to People → Locked Users">
+    Select **People** in the sidebar and click the **Locked Users** tab.
+  </Step>
+  <Step title="Update thresholds">
+    Set new values for **Failures before lockout**, **Lockout period**, and **Failure window** for both known and unknown user categories.
+  </Step>
+</Steps>
+
+<Tip>
+  For higher-security environments, increase the lockout period to several minutes and reduce the failure window. This makes automated credential-stuffing attacks significantly slower.
+</Tip>
+
+See [User Management](/admin/user-management#account-lockout-settings) for details on unlocking individual accounts.
+
+---
+
+## Board visibility
+
+### Public vs private boards
+
+Every board in WeKan has a visibility setting:
+
+- **Private** — only members explicitly added to the board can view it.
+- **Public** — anyone with the link can view the board, even without a WeKan account.
+
+Set board visibility in **Board Settings** → **Visibility**.
+
+### Restricting boards to private only
+
+If your WeKan instance should never expose boards publicly (e.g. an internal company deployment), you can prevent users from creating public boards:
+
+<Steps>
+  <Step title="Open the Admin Panel">
+    Click your avatar → **Admin Panel**.
+  </Step>
+  <Step title="Go to Settings">
+    Select **Settings** in the left sidebar.
+  </Step>
+  <Step title="Enable private boards only">
+    Enable the **Allow private boards only** option. Users will no longer be able to set a board's visibility to Public.
+  </Step>
+</Steps>
+
+<Warning>
+  Enabling this setting does not automatically make existing public boards private. Review and update the visibility of any boards that were already public before enabling this restriction.
+</Warning>
+
+---
+
+## Disabling registration
+
+If you operate a closed instance (for a team or organization), disable self-registration so that only invited users can create accounts.
+
+Go to **Admin Panel** → **Settings** → **Disable Registration**.
+
+With registration disabled, new users can only join by redeeming an invitation code you generate. See [User Management](/admin/user-management#inviting-users) for details.
+
+---
+
+## Password policies
+
+WeKan relies on Meteor's built-in account system. There is no built-in minimum password length enforcement through the Admin Panel, so consider the following compensating controls:
+
+- Enable **brute force protection** (see above) to slow down password-guessing attacks.
+- Enforce strong passwords through your identity provider if using LDAP or OAuth2 for authentication.
+- Disable the **Forgot Password** feature if your deployment uses SSO exclusively: **Admin Panel** → **Settings** → **Disable Forgot Password**.
+
+---
+
+## Security disclosure process
+
+If you discover a security vulnerability in WeKan, follow the responsible disclosure process:
+
+<Steps>
+  <Step title="Prepare your report">
+    Include the following in your report:
+
+    ```
+    Name: your name
+    Twitter: your handle (optional)
+    Bug type: e.g. XSS, CSRF, SQLi
+    Severity: Critical / High / Medium / Low
+    URL: affected endpoint or page
+    PoC: proof of concept steps or code
+    ```
+  </Step>
+  <Step title="Encrypt with PGP (recommended)">
+    Use the WeKan PGP key `security-at-wekan.fi.asc` (available in the WeKan repository) to encrypt your report before sending.
+  </Step>
+  <Step title="Email security@wekan.fi">
+    Send your report **only** to `security@wekan.fi`. Do not CC or BCC other addresses, and do not disclose the vulnerability publicly until a fix is released.
+  </Step>
+  <Step title="Wait for a fix">
+    A patched release will appear at the top of the WeKan changelog. Only report to public channels or request a CVE after a fix is available.
+  </Step>
+</Steps>
+
+<Note>
+  Responsible reporters may be added to the [WeKan Hall of Fame](https://wekan.fi/hall-of-fame/). Including a code fix in your report earns bonus points. Asking about a bug bounty loses points — WeKan is FOSS and does not offer bounties.
+</Note>
+
+---
+
+## Regular backups
+
+<Warning>
+  WeKan has no undo feature. Data deleted by users, bugs, or a full disk that corrupts MongoDB cannot be recovered without a backup.
+</Warning>
+
+Back up your WeKan database at minimum once per day. See [Backup and Restore](/admin/backup-and-restore) for step-by-step instructions.

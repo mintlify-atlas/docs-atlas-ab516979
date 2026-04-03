@@ -1,0 +1,411 @@
+---
+title: "Users API"
+description: "Manage users via the REST API"
+---
+
+<Note>
+  Most user endpoints require admin-level authentication via a Bearer token. The token is obtained by logging in via `POST /users/login`. Only the first (admin) user can access the admin-only endpoints listed here.
+</Note>
+
+## List all users
+
+Retrieve a list of all users in the Wekan instance.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/users` |
+
+**Requires admin auth:** Yes
+
+```bash
+curl -H "Authorization: Bearer cwUZ3ZsTaE6ni2R3ppSkYd-KrDvxsLcBIkSVfOCfIkA" \
+     http://localhost:3000/api/users
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique user identifier.
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  The user's username.
+</ResponseField>
+
+```json
+[
+  {
+    "_id": "XQMZgynx9M79qTtQc",
+    "username": "admin"
+  },
+  {
+    "_id": "vy4WYj7k7NBhf3AFc",
+    "username": "john"
+  }
+]
+```
+
+---
+
+## Get logged-in user
+
+Retrieve information about the currently authenticated user using their Bearer token.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/user` |
+
+**Requires auth:** Yes (any authenticated user, not admin-only)
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     http://localhost:3000/api/user
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique user identifier.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of account creation.
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  The user's username.
+</ResponseField>
+
+<ResponseField name="emails" type="array">
+  <Expandable title="properties">
+    <ResponseField name="address" type="string">
+      Email address.
+    </ResponseField>
+    <ResponseField name="verified" type="boolean">
+      Whether the email address has been verified.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="profile" type="object">
+  User profile data.
+</ResponseField>
+
+```json
+{
+  "_id": "vy4WYj7k7NBhf3AFc",
+  "createdAt": "2017-09-16T05:51:30.339Z",
+  "username": "john",
+  "emails": [
+    {
+      "address": "me@mail.com",
+      "verified": false
+    }
+  ],
+  "profile": {}
+}
+```
+
+---
+
+## Get a specific user
+
+Retrieve full details about a user by their ID.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `GET`  | `/api/users/:id` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="id" type="string" required>
+  The ID of the user to retrieve.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     http://localhost:3000/api/users/XQMZgynx9M79qTtQc
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  Unique user identifier.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of account creation.
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  The user's username.
+</ResponseField>
+
+<ResponseField name="emails" type="array">
+  <Expandable title="properties">
+    <ResponseField name="address" type="string">
+      Email address.
+    </ResponseField>
+    <ResponseField name="verified" type="boolean">
+      Whether the email address has been verified.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="isAdmin" type="boolean">
+  Whether the user has global admin privileges.
+</ResponseField>
+
+<ResponseField name="profile" type="object">
+  User profile data.
+</ResponseField>
+
+```json
+{
+  "_id": "XQMZgynx9M79qTtQc",
+  "createdAt": "2017-09-13T06:45:53.127Z",
+  "username": "john",
+  "emails": [
+    {
+      "address": "my@email.com",
+      "verified": false
+    }
+  ],
+  "isAdmin": true,
+  "profile": {}
+}
+```
+
+---
+
+## Create a user
+
+Create a new user as an admin. Works whether or not self-registration is enabled.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/api/users` |
+
+**Requires admin auth:** Yes
+
+### Request parameters
+
+<ParamField body="username" type="string" required>
+  The username for the new account.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  The email address for the new account.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The password for the new account.
+</ParamField>
+
+<ParamField body="isAdmin" type="boolean">
+  Grant global admin privileges to the new user. Defaults to `false`.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     -H "Content-type:application/json" \
+     -X POST \
+     http://localhost:3000/api/users \
+     -d '{ "username": "myusername", "password": "mypassword", "email": "my@email.com" }'
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the newly created user.
+</ResponseField>
+
+```json
+{
+  "_id": "EnhMbvxh65Hr7YvtG"
+}
+```
+
+---
+
+## Update a user
+
+Perform an action on a user account. The `action` field determines the operation.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `PUT`  | `/api/users/:id` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="id" type="string" required>
+  The ID of the user to update.
+</ParamField>
+
+<ParamField body="action" type="string" required>
+  The action to perform. Accepted values: `"disableLogin"`, `"enableLogin"`, `"takeOwnership"`.
+</ParamField>
+
+**Disable a user** (prevents login and purges login tokens):
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/users/ztKvBTzCqmyJ77on8 \
+     -d '{ "action": "disableLogin" }'
+```
+
+**Enable a user:**
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/users/ztKvBTzCqmyJ77on8 \
+     -d '{ "action": "enableLogin" }'
+```
+
+**Take ownership of all boards** (admin takes ownership of all boards where the user is admin):
+
+```bash
+curl -H "Authorization: Bearer t7iYB86mXoLfP_XsMegxF41oKT7iiA9lDYiKVtXcctl" \
+     -H "Content-type:application/json" \
+     -X PUT \
+     http://localhost:3000/api/users/ztKvBTzCqmyJ77on8 \
+     -d '{ "action": "takeOwnership" }'
+```
+
+---
+
+## Delete a user
+
+Permanently delete a user account by ID.
+
+| Method   | Endpoint |
+| -------- | -------- |
+| `DELETE` | `/api/users/:id` |
+
+**Requires admin auth:** Yes
+
+<ParamField path="id" type="string" required>
+  The ID of the user to delete.
+</ParamField>
+
+```bash
+curl -H "Authorization: Bearer a6DM_gOPRwBdynfXaGBaiiEwTiAuigR_Fj_81QmNpnf" \
+     -X DELETE \
+     http://localhost:3000/api/users/EnhMbvxh65Hr7YvtG
+```
+
+### Response
+
+<ResponseField name="_id" type="string">
+  The ID of the deleted user.
+</ResponseField>
+
+```json
+{
+  "_id": "EnhMbvxh65Hr7YvtG"
+}
+```
+
+<Warning>
+  User deletion is a known source of issues. Review [GitHub issue #1289](https://github.com/wekan/wekan/issues/1289) before using this endpoint in production.
+</Warning>
+
+---
+
+## Register a new user
+
+Self-register a new user account. Does not require authentication. Can be used as a form submission or JSON request.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/users/register` |
+
+**Requires auth:** No
+
+<ParamField body="username" type="string" required>
+  The desired username.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The desired password.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+```bash
+curl -H "Content-type:application/json" \
+     http://localhost:3000/users/register \
+     -d '{ "username": "myusername", "password": "mypassword", "email": "my@email.com" }'
+```
+
+### Response
+
+<ResponseField name="id" type="string">
+  The ID of the newly registered user.
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  Bearer token for use in subsequent authenticated requests.
+</ResponseField>
+
+<ResponseField name="tokenExpires" type="string">
+  ISO 8601 expiry timestamp for the token.
+</ResponseField>
+
+```json
+{
+  "id": "XQMZgynx9M79qTtQc",
+  "token": "ExMp2s9ML1JNp_l11sIfINPT3wykZ1SsVwg-cnxKdc8",
+  "tokenExpires": "2017-12-15T00:47:26.303Z"
+}
+```
+
+---
+
+## Login
+
+Authenticate and obtain a Bearer token.
+
+| Method | Endpoint |
+| ------ | -------- |
+| `POST` | `/users/login` |
+
+**Requires auth:** No
+
+<Warning>
+  You must send credentials as JSON with `Content-Type: application/json`. Form-encoded body (`-d "username=..."`) does not work with this endpoint.
+</Warning>
+
+<CodeGroup>
+
+```bash Login with username
+curl -H "Content-type:application/json" \
+     http://localhost:3000/users/login \
+     -d '{ "username": "myusername", "password": "mypassword" }'
+```
+
+```bash Login with email
+curl -H "Content-type:application/json" \
+     http://localhost:3000/users/login \
+     -d '{ "email": "my@email.com", "password": "mypassword" }'
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "id": "XQMZgynx9M79qTtQc",
+  "token": "ExMp2s9ML1JNp_l11sIfINPT3wykZ1SsVwg-cnxKdc8",
+  "tokenExpires": "2017-12-15T00:47:26.303Z"
+}
+```
+
+Use the returned `token` as the Bearer token in the `Authorization` header for all authenticated API calls.

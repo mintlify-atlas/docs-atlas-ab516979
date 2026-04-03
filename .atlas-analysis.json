@@ -1,0 +1,122 @@
+{
+  "projectType": "saas",
+  "projectName": "WeKan",
+  "projectDescription": "WeKan is an open-source, self-hosted kanban board application built with Meteor, offering real-time collaboration, rich card management, and a REST API.",
+  "theme": "almond",
+  "primaryColor": "#69b4c4",
+  "lightColor": "#0a6e89",
+  "darkColor": "#c9dfe4",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation/docker",
+              "installation/snap",
+              "installation/source"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/boards-and-lists",
+              "features/cards",
+              "features/swimlanes",
+              "features/custom-fields",
+              "features/templates"
+            ]
+          },
+          {
+            "group": "Administration",
+            "pages": [
+              "admin/user-management",
+              "admin/email-notifications",
+              "admin/security",
+              "admin/backup-and-restore"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/webhooks",
+              "integrations/import-export",
+              "integrations/ldap-oauth"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "api/boards",
+              "api/lists",
+              "api/cards",
+              "api/swimlanes",
+              "api/users",
+              "api/custom-fields"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time kanban boards with drag-and-drop",
+    "Swimlanes for organizing cards into horizontal sections",
+    "Custom fields for extending card data",
+    "WIP (Work In Progress) limits per list",
+    "Checklists, labels, attachments, and comments on cards",
+    "Gantt chart and burndown/velocity chart views",
+    "REST API for programmatic access",
+    "Outgoing webhooks for integrations",
+    "Import from Trello, Jira, Asana, and other Wekan instances",
+    "Export to JSON, CSV, and Excel",
+    "LDAP, OAuth2, and SAML authentication",
+    "Multi-language support (105+ languages via Transifex)",
+    "Self-hosted: Docker, Snap, Sandstorm, and bare-metal installs",
+    "Admin panel for user management, settings, and email configuration",
+    "Role-based permissions (admin, normal, comment-only, no-comments)"
+  ],
+  "publicApiSurface": [
+    "POST /users/login",
+    "POST /users/register",
+    "GET /api/users",
+    "GET /api/users/:id",
+    "POST /api/users",
+    "PUT /api/users/:id",
+    "DELETE /api/users/:id",
+    "GET /api/boards",
+    "POST /api/boards",
+    "GET /api/boards/:boardId",
+    "DELETE /api/boards/:boardId",
+    "GET /api/boards/:boardId/lists",
+    "POST /api/boards/:boardId/lists",
+    "GET /api/boards/:boardId/lists/:listId",
+    "DELETE /api/boards/:boardId/lists/:listId",
+    "GET /api/boards/:boardId/lists/:listId/cards",
+    "POST /api/boards/:boardId/lists/:listId/cards",
+    "GET /api/boards/:boardId/lists/:listId/cards/:cardId",
+    "PUT /api/boards/:boardId/lists/:listId/cards/:cardId",
+    "DELETE /api/boards/:boardId/lists/:listId/cards/:cardId",
+    "GET /api/boards/:boardId/swimlanes",
+    "POST /api/boards/:boardId/swimlanes",
+    "GET /api/boards/:boardId/custom-fields",
+    "POST /api/boards/:boardId/custom-fields",
+    "GET /api/boards/:boardId/lists/:listId/cards/:cardId/checklists",
+    "POST /api/boards/:boardId/lists/:listId/cards/:cardId/checklists"
+  ]
+}

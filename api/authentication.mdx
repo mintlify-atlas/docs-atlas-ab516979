@@ -1,0 +1,148 @@
+---
+title: "Authentication"
+description: "Authenticate with the WeKan REST API using token-based auth"
+---
+
+The WeKan REST API uses token-based authentication. You exchange your username or email and password for a short-lived token, then include that token as a Bearer header on every subsequent request.
+
+## Get a token
+
+<Steps>
+
+<Step title="Send your credentials to /users/login">
+
+POST your credentials as JSON to `/users/login`. You can authenticate with either a username or an email address.
+
+<Warning>
+  Send credentials over HTTPS only. Posting a username and password over plain HTTP exposes them to interception.
+</Warning>
+
+**Request parameters**
+
+<ParamField body="username" type="string">
+  Your WeKan username. Required if not using `email`.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Your WeKan email address. Required if not using `username`.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Your password. Usernames and passwords are case-sensitive.
+</ParamField>
+
+<CodeGroup>
+
+```bash Login with username
+curl -H "Content-Type: application/json" \
+     https://your-wekan.example.com/users/login \
+     -d '{ "username": "myusername", "password": "mypassword" }'
+```
+
+```bash Login with email
+curl -H "Content-Type: application/json" \
+     https://your-wekan.example.com/users/login \
+     -d '{ "email": "my@email.com", "password": "mypassword" }'
+```
+
+</CodeGroup>
+
+</Step>
+
+<Step title="Read the token from the response">
+
+A successful login returns a JSON object with your user ID, auth token, and expiry time.
+
+**Response fields**
+
+<ResponseField name="id" type="string" required>
+  The authenticated user's ID.
+</ResponseField>
+
+<ResponseField name="token" type="string" required>
+  The Bearer token to use in subsequent API requests.
+</ResponseField>
+
+<ResponseField name="tokenExpires" type="string" required>
+  ISO 8601 timestamp indicating when the token expires.
+</ResponseField>
+
+```json
+{
+  "id": "XQMZgynx9M79qTtQc",
+  "token": "ExMp2s9ML1JNp_l11sIfINPT3wykZ1SsVwg-cnxKdc8",
+  "tokenExpires": "2017-12-15T00:47:26.303Z"
+}
+```
+
+</Step>
+
+<Step title="Use the token in API requests">
+
+Pass the token as a `Bearer` token in the `Authorization` header on every authenticated request.
+
+```bash
+curl -H "Authorization: Bearer ExMp2s9ML1JNp_l11sIfINPT3wykZ1SsVwg-cnxKdc8" \
+     https://your-wekan.example.com/api/boards
+```
+
+</Step>
+
+</Steps>
+
+## Worked example
+
+The following sequence logs in and then makes an authenticated API call to list boards.
+
+<CodeGroup>
+
+```bash Step 1: login
+curl -H "Content-Type: application/json" \
+     https://your-wekan.example.com/users/login \
+     -d '{ "username": "myusername", "password": "mypassword" }'
+```
+
+```bash Step 2: use the token
+# Replace the token value with the one returned in step 1
+curl -H "Authorization: Bearer ExMp2s9ML1JNp_l11sIfINPT3wykZ1SsVwg-cnxKdc8" \
+     https://your-wekan.example.com/api/boards
+```
+
+</CodeGroup>
+
+## Token expiration and refresh
+
+Every token includes a `tokenExpires` field. Once a token expires, requests using it return a `401 Unauthorized` response.
+
+To refresh a token, repeat the login request with your credentials to obtain a new one. Build your integration to:
+
+1. Store the `tokenExpires` timestamp alongside the token.
+2. Check the expiry before each request (or on a `401` response).
+3. Re-authenticate to get a fresh token when needed.
+
+<Note>
+  There is no dedicated token-refresh endpoint. Re-authentication always creates a new token.
+</Note>
+
+## Authentication errors
+
+| Status | Meaning |
+| --- | --- |
+| `401 Unauthorized` | No token provided, token is invalid, or the token has expired. |
+| `403 Forbidden` | Token is valid but the user does not have permission for the requested resource. |
+
+Error responses include `error` and `reason` fields:
+
+```json
+{
+  "error": "Unauthorized",
+  "reason": "Unauthorized"
+}
+```
+
+## Security best practices
+
+- **HTTPS only** — never transmit credentials or tokens over plain HTTP.
+- **Token rotation** — treat tokens as short-lived secrets and refresh them before expiry rather than reusing the same token indefinitely.
+- **Least privilege** — authenticate as a user that has only the permissions your integration requires. Avoid using an admin account for routine automation.
+- **Secret storage** — store tokens in environment variables or a secrets manager, not hard-coded in source files.
